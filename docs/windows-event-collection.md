@@ -7,7 +7,7 @@ This document defines the Windows collection path for the current Hayabusa MVP.
 ```text
 Windows Event Log (Application/System/Security)
 -> Fluent Bit (winevtlog input)
--> Vector forward input (tcp/24224)
+-> Vector Windows forward lane (tcp/24225)
 -> NATS JetStream
 -> ClickHouse security.events
 ```
@@ -16,11 +16,12 @@ Windows Event Log (Application/System/Security)
 
 - Windows collector template: `configs/fluent-bit/windows/fluent-bit-windows.conf`
 - Replace `HAYABUSA_VECTOR_HOST` with the reachable IP or hostname for the Hayabusa Vector service.
+- Windows endpoint validation script: `scripts/windows-endpoint-check.sh`
 
 ## Field Expectations in Hayabusa
 
 Vector normalization writes:
-- `ingest_source = vector-fluent`
+- `ingest_source = vector-windows-endpoint` for tag `windows.events`
 - `message` from source `message`, `log`, `msg`, or `Message`
 - source details into `fields` map (including Windows keys when present)
 
@@ -31,13 +32,13 @@ Vector normalization writes:
 3. Start Fluent Bit as a Windows service.
 4. Validate in Hayabusa:
    - `docker compose logs -f vector`
-   - ClickHouse query:
-     `SELECT ts, ingest_source, message FROM security.events WHERE ingest_source='vector-fluent' ORDER BY ts DESC LIMIT 20`
+   - `./scripts/windows-endpoint-check.sh`
 
 ## Current Scope
 
 - Baseline strategy and config template: complete
+- Dedicated Windows ingress lane in Vector (`24225`) with source tagging: complete
 - Production hardening pending:
-  - TLS and authentication on forward path
+  - TLS and authentication on forward path (template placeholders included)
   - endpoint enrollment/identity strategy
   - policy rollout/update mechanism

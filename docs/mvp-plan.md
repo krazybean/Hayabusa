@@ -74,7 +74,7 @@ Deliver:
 Deliver:
 - Windows Fluent Bit `winevtlog` config template
 - Baseline field mapping expectations into Vector normalization
-- Windows collection runbook for endpoint setup and validation
+- Windows collection runbook and endpoint validation script
 
 ## Next focus
 

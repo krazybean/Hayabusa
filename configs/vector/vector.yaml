@@ -22,7 +22,15 @@ sources:
   # Fluent Bit forward input for host-collector traffic.
   ingest_fluent_forward:
     type: fluent
+    mode: tcp
     address: 0.0.0.0:24224
+
+  # Dedicated Windows endpoint lane (Fluent Bit winevtlog forward).
+  ingest_fluent_windows_forward:
+    type: fluent
+    mode: tcp
+    address: 0.0.0.0:24225
+    connection_limit: 200
 
   # Buffered normalized events pulled back from JetStream before storage.
   buffered_events:
@@ -44,6 +52,7 @@ transforms:
       - ingest_syslog_tcp
       - ingest_syslog_udp
       - ingest_fluent_forward
+      - ingest_fluent_windows_forward
     source: |
       # Stable anchor fields
       # ClickHouse DateTime64 JSON parsing rejects RFC3339 trailing "Z" in this setup.
@@ -61,6 +70,9 @@ transforms:
       }
       if exists(.source_type) && to_string!(.source_type) == "fluent" {
         .ingest_source = "vector-fluent"
+        if exists(.tag) && to_string!(.tag) == "windows.events" {
+          .ingest_source = "vector-windows-endpoint"
+        }
       }
 
       # Ensure required message anchor column is always present.

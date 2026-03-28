@@ -18,7 +18,7 @@ Current status is local MVP foundation, not full feature parity yet.
 - Core stack running in Docker Compose: ClickHouse, Keeper, NATS, Vector, Prometheus, Grafana
 - Active buffered ingest path (`Vector -> NATS JetStream -> ClickHouse`)
 - Host collector baseline with Fluent Bit (`tail -> forward -> Vector`)
-- Windows event collection strategy defined (`winevtlog -> forward -> Vector`)
+- Windows event collection strategy defined (`winevtlog -> forward -> Vector:24225`) + validation script
 - Normalized events stored in ClickHouse (`security.events`)
 - External syslog ingestion over TCP/UDP (`1514`)
 - Provisioned Grafana dashboard for event visibility
