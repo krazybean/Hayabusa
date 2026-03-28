@@ -69,6 +69,8 @@ transforms:
           .message = to_string!(.log)
         } else if exists(.msg) {
           .message = to_string!(.msg)
+        } else if exists(.Message) {
+          .message = to_string!(.Message)
         } else {
           .message = "normalized event (no source message field)"
         }
@@ -89,6 +91,16 @@ transforms:
       if exists(.tag)       { fields.tag       = to_string!(.tag) }
       if exists(.collector) { fields.collector = to_string!(.collector) }
       if exists(.host_collection) { fields.host_collection = to_string!(.host_collection) }
+      if exists(.Channel) { fields.channel = to_string!(.Channel) }
+      if exists(.channel) { fields.channel = to_string!(.channel) }
+      if exists(.Computer) { fields.computer = to_string!(.Computer) }
+      if exists(.computer) { fields.computer = to_string!(.computer) }
+      if exists(.EventID) { fields.event_id = to_string!(.EventID) }
+      if exists(.event_id) { fields.event_id = to_string!(.event_id) }
+      if exists(.Level) { fields.level = to_string!(.Level) }
+      if exists(.level) { fields.level = to_string!(.level) }
+      if exists(.ProviderName) { fields.provider_name = to_string!(.ProviderName) }
+      if exists(.provider_name) { fields.provider_name = to_string!(.provider_name) }
       .fields = fields
 
       # Remove top-level source fields now captured in the map
@@ -101,6 +113,16 @@ transforms:
       del(.tag)
       del(.collector)
       del(.host_collection)
+      del(.Channel)
+      del(.channel)
+      del(.Computer)
+      del(.computer)
+      del(.EventID)
+      del(.event_id)
+      del(.Level)
+      del(.level)
+      del(.ProviderName)
+      del(.provider_name)
 
 sinks:
   # Buffer sink — writes normalized events into NATS JetStream.

@@ -10,7 +10,7 @@
 
 ## Collection
 - [x] Fluent Bit
-- [ ] Windows event collection approach
+- [x] Windows event collection approach
 - [x] syslog input plan
 - [x] test generator plan
 

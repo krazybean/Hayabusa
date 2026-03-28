@@ -12,6 +12,7 @@ collect -> normalize -> buffer -> store -> detect -> alert -> investigate
 flowchart LR
   Collect[demo_logs + external syslog] --> Normalize[Vector normalize]
   FluentBit[Fluent Bit tail collector] --> Normalize
+  WinFluentBit[Windows Fluent Bit winevtlog] --> Normalize
   Normalize --> Buffer[(NATS JetStream)]
   Buffer --> Store[(ClickHouse security.events)]
   Buffer --> Debug[Vector console sink]
@@ -69,6 +70,7 @@ Recommended:
 Current local MVP:
 - Fluent Bit tails host log files from `data/host-logs`
 - Fluent Bit forwards to Vector over `forward` protocol (`24224`)
+- Windows collector template defined at `configs/fluent-bit/windows/fluent-bit-windows.conf`
 
 ### Ingestion / Normalization
 Purpose:

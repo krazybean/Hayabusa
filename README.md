@@ -29,6 +29,7 @@ flowchart LR
     DemoLogs[Vector Demo Logs] --> Vector[Vector Normalize]
     SyslogFeed[External Syslog TCP/UDP 1514] --> Vector
     FluentBit[Fluent Bit Host Tail] --> Vector
+    WinFluentBit[Windows Fluent Bit winevtlog] --> Vector
     Vector --> Nats[(NATS JetStream)]
     Nats --> Events[(ClickHouse security.events)]
     Nats --> Console[Vector Console Sink]
@@ -55,6 +56,7 @@ Active ingest path is now `Vector -> NATS JetStream -> ClickHouse`, with ClickHo
 - SQL-first detection engine MVP writes triggered candidates to `security.alert_candidates`
 - JetStream stream bootstrap is automated (`HAYABUSA_EVENTS` + `VECTOR_CLICKHOUSE_WRITER`)
 - Fluent Bit host collector baseline is active (`forward -> Vector:24224`)
+- Windows event collector template is defined (`winevtlog -> forward -> Vector`)
 
 ## Operating hygiene
 
@@ -63,6 +65,7 @@ Active ingest path is now `Vector -> NATS JetStream -> ClickHouse`, with ClickHo
 - Component progress tracker: `docs/component-checklist.md`
 - Detection engine details: `docs/detection-engine.md`
 - Alert routing details: `docs/alert-routing.md`
+- Windows collection runbook: `docs/windows-event-collection.md`
 
 ## Repository layout
 
@@ -225,6 +228,12 @@ Query recent Fluent-ingested events:
 curl -s http://localhost:8123 --data-binary \
   "SELECT ts, ingest_source, message FROM security.events WHERE ingest_source = 'vector-fluent' ORDER BY ts DESC LIMIT 20 FORMAT PrettyCompact"
 ```
+
+## Windows event collection path
+
+Use the template at `configs/fluent-bit/windows/fluent-bit-windows.conf` on Windows endpoints and follow:
+
+- `docs/windows-event-collection.md`
 
 ## Storage budget guardrail (1 GiB)
 

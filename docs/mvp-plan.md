@@ -69,9 +69,16 @@ Deliver:
 - Fluent Bit forward protocol integrated into Vector ingest path
 - Smoke test validates Fluent Bit -> Vector -> JetStream -> ClickHouse flow
 
+## Phase 9: Windows collection strategy (completed)
+
+Deliver:
+- Windows Fluent Bit `winevtlog` config template
+- Baseline field mapping expectations into Vector normalization
+- Windows collection runbook for endpoint setup and validation
+
 ## Next focus
 
 - Define canonical normalized schema versioning strategy
 - Harden alert delivery (external destinations, auth, retries, secret management)
 - Add first saved query pack for investigation workflows
-- Windows event collection strategy and mapping
+- Windows endpoint rollout validation (real host test + hardening)

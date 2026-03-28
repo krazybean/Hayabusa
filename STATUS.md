@@ -14,6 +14,7 @@ Build toward Wazuh-comparable capability while keeping the local Docker MVP stab
 - JetStream durable consumer: `VECTOR_CLICKHOUSE_WRITER`
 - Syslog ingest: TCP/UDP `1514` active
 - Host collector path: `Fluent Bit (tail) -> Vector forward (24224)` active
+- Windows event collector path: strategy + template defined (`winevtlog -> forward -> Vector`)
 - Storage TTL: `7 days` on `security.events`
 - Storage budget guardrail: `1 GiB` target via `./scripts/storage-budget-guard.sh`
 - Grafana alerts: `Hayabusa Ingest Stalled`, `Hayabusa Events Storage Near Budget`, `Hayabusa Security Failed Login Burst`
@@ -24,7 +25,7 @@ Build toward Wazuh-comparable capability while keeping the local Docker MVP stab
 ## Component Progress
 
 - Foundation: complete for MVP
-- Collection: partial (Fluent Bit path active; Windows event path pending)
+- Collection: partial-strong (Fluent Bit active; Windows event path defined)
 - Ingestion/Normalization: partial
 - Transport (NATS in active path): MVP complete
 - Storage: solid baseline
@@ -34,7 +35,7 @@ Build toward Wazuh-comparable capability while keeping the local Docker MVP stab
 
 ## Next Priority Queue
 
-1. Windows event collection path and mapping strategy
+1. Windows endpoint rollout validation (real host test + hardening)
 2. Detection content expansion (security-focused rules + correlation)
 3. Alert delivery hardening (external destinations, retries, auth, secrets)
 4. Investigation query pack and saved workflows
@@ -46,7 +47,7 @@ Build toward Wazuh-comparable capability while keeping the local Docker MVP stab
 3. `docker compose logs --tail=120 vector`
 4. `docker compose logs --tail=120 fluent-bit`
 5. `docker compose logs --tail=120 grafana`
-6. Review `docs/component-checklist.md`, `docs/wazuh-parity-map.md`, and `docs/mvp-plan.md`
+6. Review `docs/component-checklist.md`, `docs/wazuh-parity-map.md`, `docs/mvp-plan.md`, and `docs/windows-event-collection.md`
 
 ## Linear Tracking
 
