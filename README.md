@@ -24,10 +24,24 @@ This repository is a self-hosted, mostly offline, FOSS-first starter scaffold fo
 
 ## Local MVP data flow
 
-```text
-Vector (demo logs + normalize) -> ClickHouse -> Detection -> alert_candidates
-                               \-> Console sink (debug)      \-> Grafana (query/triage)
-Prometheus -> Grafana
+```mermaid
+flowchart LR
+    DemoLogs[Vector Demo Logs] --> Vector[Vector Normalize]
+    SyslogFeed[External Syslog TCP/UDP 1514] --> Vector
+    Vector --> Events[(ClickHouse security.events)]
+    Vector --> Console[Vector Console Sink]
+
+    Events --> Detection[Detection Service]
+    Detection --> Candidates[(ClickHouse security.alert_candidates)]
+
+    Events --> Grafana[Grafana Dashboards + Alert Rules]
+    Candidates --> Grafana
+    Prometheus[Prometheus Metrics] --> Grafana
+
+    Grafana --> AlertRouter[alert-sink Router]
+    AlertRouter -. optional forward .-> ExternalWebhook[External Webhook]
+
+    Vector -. future buffer path .-> NATS[(NATS JetStream)]
 ```
 
 NATS JetStream and ClickHouse Keeper run in this stack now to preserve clean boundaries for later buffering and clustering. The active ingest path is currently direct `Vector -> ClickHouse`.
@@ -86,7 +100,7 @@ NATS JetStream and ClickHouse Keeper run in this stack now to preserve clean bou
 - ClickHouse HTTP: `http://localhost:8123`
 - NATS monitoring: `http://localhost:8222`
 - Vector API: `http://localhost:8686`
-- Alert sink (webhook test endpoint): `http://localhost:5678`
+- Alert router (local webhook endpoint): `http://localhost:5678`
 - Grafana dashboard: `Dashboards -> Hayabusa -> Hayabusa Overview`
 - Grafana alert rule: `Alerting -> Alert rules -> Hayabusa Ingest Stalled`
 - Grafana storage alert rule: `Alerting -> Alert rules -> Hayabusa Events Storage Near Budget`
@@ -140,6 +154,22 @@ View routed alert webhook payloads:
 
 ```bash
 docker compose logs -f alert-sink
+```
+
+Alert routing behavior:
+
+```mermaid
+flowchart LR
+    A1[Ingest Stall Rule] --> G[Grafana Alerting Policy]
+    A2[Storage Budget Rule] --> G
+    A3[Failed Login Burst Rule] --> G
+
+    G -->|default route<br/>group_by: service,severity| R1[hayabusa-default-webhook]
+    G -->|detection route<br/>match service=detection<br/>group_by: rule_id,severity| R2[hayabusa-detection-webhook]
+
+    R1 --> Sink[alert-sink Router]
+    R2 --> Sink
+    Sink -. optional bearer-token forward .-> Ext[External Webhook]
 ```
 
 Configure optional external webhook forwarding (local `.env`, not committed):

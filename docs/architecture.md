@@ -6,6 +6,27 @@
 collect -> normalize -> buffer -> store -> detect -> alert -> investigate
 ```
 
+## Current Local Implementation
+
+```mermaid
+flowchart LR
+  Collect[demo_logs + external syslog] --> Normalize[Vector normalize]
+  Normalize --> Store[(ClickHouse security.events)]
+  Normalize --> Debug[Vector console sink]
+
+  Store --> Detect[Detection service]
+  Detect --> Candidates[(security.alert_candidates)]
+
+  Store --> Grafana[Grafana dashboards + rules]
+  Candidates --> Grafana
+  Prom[Prometheus] --> Grafana
+
+  Grafana --> Router[alert-sink router]
+  Router -. optional .-> External[external webhook]
+
+  Normalize -. future path .-> Buffer[(NATS JetStream)]
+```
+
 ## Segments
 
 ### Foundation
@@ -126,7 +147,8 @@ Options:
 - Grafana Alerting
 
 Recommended:
-- custom service later
+- Grafana Alerting + local alert router for MVP
+- dedicated alert service later for broader delivery controls
 
 ### Presentation
 Purpose:
