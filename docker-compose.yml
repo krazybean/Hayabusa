@@ -1,0 +1,173 @@
+services:
+  # Columnar event store (single-node for local MVP).
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    container_name: clickhouse
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - ./configs/clickhouse/config.xml:/etc/clickhouse-server/config.d/local-config.xml:ro
+      - ./configs/clickhouse/users.xml:/etc/clickhouse-server/users.d/local-users.xml:ro
+      - ./configs/clickhouse/initdb:/docker-entrypoint-initdb.d:ro
+    environment:
+      CLICKHOUSE_DB: security
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: ""
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8123/ping"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # Coordination service reserved for future ClickHouse clustering.
+  clickhouse-keeper:
+    image: clickhouse/clickhouse-keeper:latest
+    container_name: clickhouse-keeper
+    ports:
+      - "9181:9181"
+      - "9234:9234"
+    volumes:
+      - keeper_data:/var/lib/clickhouse-keeper
+      - ./configs/clickhouse/keeper.xml:/etc/clickhouse-keeper/keeper_config.xml:ro
+    healthcheck:
+      test: ["CMD", "clickhouse-keeper-client", "--host", "localhost", "--port", "9181", "ls", "/"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # Transport/buffer layer (running now; active ingest flow still direct Vector -> ClickHouse).
+  nats:
+    image: nats:latest
+    container_name: nats
+    command: ["-js", "-m", "8222"]
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    volumes:
+      - nats_data:/data
+    healthcheck:
+      # Distroless image: no shell/curl/wget available inside container.
+      test: ["CMD", "/nats-server", "--version"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # Ingestion + normalization pipeline (demo source for local MVP).
+  vector:
+    image: timberio/vector:latest-alpine
+    container_name: vector
+    ports:
+      - "8686:8686"
+      - "1514:1514"
+      - "1514:1514/udp"
+    volumes:
+      - ./configs/vector/vector.yaml:/etc/vector/vector.yaml:ro
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    healthcheck:
+      # Vector API listens on IPv4 in this image; use 127.0.0.1 to avoid ::1 refusal.
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8686/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # Metrics collection for platform observability.
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # Dashboard and visualization layer.
+  grafana:
+    image: grafana/grafana-oss:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      # Install ClickHouse datasource plugin so log/event queries can be built in Grafana UI.
+      GF_PLUGINS_PREINSTALL: grafana-clickhouse-datasource
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./configs/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./configs/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # SQL-first detection engine (MVP).
+  detection:
+    image: curlimages/curl:latest
+    container_name: detection
+    command: ["/bin/sh", "/app/run.sh"]
+    environment:
+      CLICKHOUSE_URL: http://clickhouse:8123/
+      RULE_DIR: /etc/hayabusa/rules
+      DETECTION_POLL_SECONDS: "30"
+    volumes:
+      - ./services/detection/run.sh:/app/run.sh:ro
+      - ./configs/rules/detections:/etc/hayabusa/rules:ro
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+      vector:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "sh", "-c", "test -f /tmp/detection-heartbeat"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # Alert routing sink (local visibility + optional external forwarding).
+  alert-sink:
+    image: node:22-alpine
+    container_name: alert-sink
+    command: ["node", "/app/server.js"]
+    ports:
+      - "5678:8080"
+    environment:
+      ALERT_ROUTER_LISTEN_PORT: "8080"
+      ALERT_ROUTER_EXTERNAL_WEBHOOK_URL: ${HAYABUSA_EXTERNAL_WEBHOOK_URL:-}
+      ALERT_ROUTER_EXTERNAL_WEBHOOK_TOKEN: ${HAYABUSA_EXTERNAL_WEBHOOK_TOKEN:-}
+      ALERT_ROUTER_EXTERNAL_WEBHOOK_TOKEN_FILE: ${HAYABUSA_EXTERNAL_WEBHOOK_TOKEN_FILE:-}
+      ALERT_ROUTER_FAIL_ON_FORWARD_ERROR: ${HAYABUSA_ALERT_ROUTER_FAIL_ON_FORWARD_ERROR:-false}
+    volumes:
+      - ./services/alert-router/server.js:/app/server.js:ro
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  clickhouse_data:
+  keeper_data:
+  nats_data:
+  prometheus_data:
+  grafana_data:

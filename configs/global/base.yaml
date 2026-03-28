@@ -1,0 +1,16 @@
+platform:
+  environment: local
+  site: primary
+  timezone: UTC
+
+network:
+  nats_url: nats://nats:4222
+  clickhouse_url: http://clickhouse:8123
+
+storage:
+  clickhouse_database: security
+  retention_hot_days: 7
+
+observability:
+  log_level: info
+  metrics_enabled: true

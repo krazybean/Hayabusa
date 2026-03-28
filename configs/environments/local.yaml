@@ -1,0 +1,5 @@
+platform:
+  environment: local
+
+observability:
+  log_level: debug

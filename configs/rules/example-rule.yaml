@@ -1,0 +1,11 @@
+id: example_disabled_rule
+name: Example Disabled Rule
+description: Example detection rule schema for the local detection engine.
+severity: medium
+enabled: false
+threshold_op: gte
+threshold_value: 10
+query: |
+  SELECT count()
+  FROM security.events
+  WHERE ts > now() - INTERVAL 5 MINUTE

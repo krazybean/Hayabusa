@@ -1,0 +1,16 @@
+apiVersion: 1
+
+datasources:
+  - name: ClickHouse
+    uid: hayabusa-clickhouse
+    type: grafana-clickhouse-datasource
+    access: proxy
+    editable: true
+    jsonData:
+      host: clickhouse
+      port: 8123
+      protocol: http
+      defaultDatabase: security
+      username: default
+    secureJsonData:
+      password: ""
