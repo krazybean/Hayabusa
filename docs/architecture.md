@@ -11,8 +11,10 @@ collect -> normalize -> buffer -> store -> detect -> alert -> investigate
 ```mermaid
 flowchart LR
   Collect[demo_logs + external syslog] --> Normalize[Vector normalize]
-  Normalize --> Store[(ClickHouse security.events)]
-  Normalize --> Debug[Vector console sink]
+  FluentBit[Fluent Bit tail collector] --> Normalize
+  Normalize --> Buffer[(NATS JetStream)]
+  Buffer --> Store[(ClickHouse security.events)]
+  Buffer --> Debug[Vector console sink]
 
   Store --> Detect[Detection service]
   Detect --> Candidates[(security.alert_candidates)]
@@ -24,7 +26,6 @@ flowchart LR
   Grafana --> Router[alert-sink router]
   Router -. optional .-> External[external webhook]
 
-  Normalize -. future path .-> Buffer[(NATS JetStream)]
 ```
 
 ## Segments
@@ -65,6 +66,10 @@ Recommended:
 - Fluent Bit later for endpoints
 - Vector for local MVP
 
+Current local MVP:
+- Fluent Bit tails host log files from `data/host-logs`
+- Fluent Bit forwards to Vector over `forward` protocol (`24224`)
+
 ### Ingestion / Normalization
 Purpose:
 - parse raw input
@@ -92,6 +97,11 @@ Options:
 
 Recommended:
 - NATS JetStream
+
+Current local MVP:
+- Stream: `HAYABUSA_EVENTS` (subjects `hayabusa.events.>`)
+- Durable consumer: `VECTOR_CLICKHOUSE_WRITER`
+- Retention guardrail: max bytes `256 MiB`, max age `24h`
 
 ### Storage / Query
 Purpose:

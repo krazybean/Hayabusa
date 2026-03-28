@@ -7,6 +7,13 @@ network:
   nats_url: nats://nats:4222
   clickhouse_url: http://clickhouse:8123
 
+transport:
+  nats_stream_name: HAYABUSA_EVENTS
+  nats_subject: hayabusa.events.normalized
+  nats_consumer_name: VECTOR_CLICKHOUSE_WRITER
+  nats_stream_max_bytes: 268435456
+  nats_stream_max_age: 24h
+
 storage:
   clickhouse_database: security
   retention_hot_days: 7
@@ -14,3 +21,7 @@ storage:
 observability:
   log_level: info
   metrics_enabled: true
+
+collection:
+  fluent_bit_forward_port: 24224
+  host_log_path: ./data/host-logs

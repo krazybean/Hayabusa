@@ -39,7 +39,7 @@ services:
       retries: 10
     restart: unless-stopped
 
-  # Transport/buffer layer (running now; active ingest flow still direct Vector -> ClickHouse).
+  # Transport/buffer layer (active in ingest flow).
   nats:
     image: nats:latest
     container_name: nats
@@ -57,7 +57,26 @@ services:
       retries: 10
     restart: unless-stopped
 
-  # Ingestion + normalization pipeline (demo source for local MVP).
+  # JetStream bootstrap (idempotent stream + durable consumer setup).
+  nats-init:
+    image: natsio/nats-box:latest
+    container_name: nats-init
+    command: ["/bin/sh", "/app/bootstrap-jetstream.sh"]
+    environment:
+      NATS_URL: nats://nats:4222
+      NATS_STREAM_NAME: HAYABUSA_EVENTS
+      NATS_STREAM_SUBJECTS: "hayabusa.events.>"
+      NATS_CONSUMER_NAME: VECTOR_CLICKHOUSE_WRITER
+      NATS_STREAM_MAX_BYTES: "268435456"
+      NATS_STREAM_MAX_AGE: 24h
+    volumes:
+      - ./scripts/bootstrap-jetstream.sh:/app/bootstrap-jetstream.sh:ro
+    depends_on:
+      nats:
+        condition: service_healthy
+    restart: "no"
+
+  # Ingestion + normalization pipeline (normalize -> JetStream -> store).
   vector:
     image: timberio/vector:latest-alpine
     container_name: vector
@@ -65,6 +84,7 @@ services:
       - "8686:8686"
       - "1514:1514"
       - "1514:1514/udp"
+      - "24224:24224"
     volumes:
       - ./configs/vector/vector.yaml:/etc/vector/vector.yaml:ro
     depends_on:
@@ -72,9 +92,29 @@ services:
         condition: service_healthy
       nats:
         condition: service_healthy
+      nats-init:
+        condition: service_completed_successfully
     healthcheck:
       # Vector API listens on IPv4 in this image; use 127.0.0.1 to avoid ::1 refusal.
       test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8686/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # Host-side collector (Fluent Bit -> Vector forward input).
+  fluent-bit:
+    image: fluent/fluent-bit:latest
+    container_name: fluent-bit
+    command: ["/fluent-bit/bin/fluent-bit", "-c", "/fluent-bit/etc/fluent-bit.conf"]
+    volumes:
+      - ./configs/fluent-bit/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro
+      - ./data/host-logs:/var/log/hayabusa-host
+    depends_on:
+      vector:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/fluent-bit/bin/fluent-bit", "--version"]
       interval: 20s
       timeout: 5s
       retries: 10

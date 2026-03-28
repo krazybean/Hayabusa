@@ -9,7 +9,7 @@
 - [x] Vector
 
 ## Collection
-- [ ] Fluent Bit
+- [x] Fluent Bit
 - [ ] Windows event collection approach
 - [x] syslog input plan
 - [x] test generator plan
@@ -21,9 +21,9 @@
 - [ ] schema versioning
 
 ## Transport
-- [ ] NATS subject/stream naming
-- [ ] retention rules
-- [ ] replay strategy
+- [x] NATS subject/stream naming
+- [x] retention rules
+- [x] replay strategy
 
 ## Storage
 - [x] ClickHouse database

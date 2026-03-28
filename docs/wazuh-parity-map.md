@@ -5,17 +5,19 @@ Current status is local MVP foundation, not full feature parity yet.
 
 ## Parity Snapshot
 
-- Data collection/ingest baseline: **partial**
-- Storage and search baseline: **partial**
+- Data collection/ingest baseline: **partial-strong**
+- Storage and search baseline: **partial-strong**
 - Dashboards and visibility baseline: **partial**
-- Detection rules engine: **early**
-- Alert routing and notifications: **early**
+- Detection rules engine: **partial**
+- Alert routing and notifications: **partial**
 - Endpoint management/agents: **not started**
 - Compliance/reporting workflows: **not started**
 
 ## What is already in place
 
 - Core stack running in Docker Compose: ClickHouse, Keeper, NATS, Vector, Prometheus, Grafana
+- Active buffered ingest path (`Vector -> NATS JetStream -> ClickHouse`)
+- Host collector baseline with Fluent Bit (`tail -> forward -> Vector`)
 - Normalized events stored in ClickHouse (`security.events`)
 - External syslog ingestion over TCP/UDP (`1514`)
 - Provisioned Grafana dashboard for event visibility
@@ -38,7 +40,7 @@ Current status is local MVP foundation, not full feature parity yet.
 
 ## Next parity-focused milestones
 
-1. Detection engine MVP (YAML rule -> SQL query -> alert record)
-2. Alert routing MVP (contact points + policy + dedupe)
-3. NATS in active path for buffering/replay durability
-4. Host collector strategy (Fluent Bit + Windows event path)
+1. Windows event collection path and schema mapping
+2. Detection content expansion (correlation + broader security ruleset)
+3. Investigation workflow acceleration (saved hunts, pivot views, case linkage)
+4. Endpoint/agent management model for Wazuh-comparable host visibility

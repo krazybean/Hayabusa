@@ -19,6 +19,23 @@ sources:
     address: 0.0.0.0:1514
     mode: udp
 
+  # Fluent Bit forward input for host-collector traffic.
+  ingest_fluent_forward:
+    type: fluent
+    address: 0.0.0.0:24224
+
+  # Buffered normalized events pulled back from JetStream before storage.
+  buffered_events:
+    type: nats
+    connection_name: vector-buffer-reader
+    url: nats://nats:4222
+    subject: hayabusa.events.normalized
+    decoding:
+      codec: json
+    jetstream:
+      stream: HAYABUSA_EVENTS
+      consumer: VECTOR_CLICKHOUSE_WRITER
+
 transforms:
   normalize:
     type: remap
@@ -26,6 +43,7 @@ transforms:
       - demo_logs
       - ingest_syslog_tcp
       - ingest_syslog_udp
+      - ingest_fluent_forward
     source: |
       # Stable anchor fields
       # ClickHouse DateTime64 JSON parsing rejects RFC3339 trailing "Z" in this setup.
@@ -41,6 +59,22 @@ transforms:
       } else {
         .ingest_source = "vector-syslog"
       }
+      if exists(.source_type) && to_string!(.source_type) == "fluent" {
+        .ingest_source = "vector-fluent"
+      }
+
+      # Ensure required message anchor column is always present.
+      if !exists(.message) {
+        if exists(.log) {
+          .message = to_string!(.log)
+        } else if exists(.msg) {
+          .message = to_string!(.msg)
+        } else {
+          .message = "normalized event (no source message field)"
+        }
+      } else {
+        .message = to_string!(.message)
+      }
 
       # Collect all variable source fields into the Map(String, String) column.
       # Coerce to string so ClickHouse accepts them without type errors.
@@ -52,6 +86,9 @@ transforms:
       if exists(.facility)  { fields.facility  = to_string!(.facility) }
       if exists(.procid)    { fields.procid    = to_string!(.procid) }
       if exists(.msgid)     { fields.msgid     = to_string!(.msgid) }
+      if exists(.tag)       { fields.tag       = to_string!(.tag) }
+      if exists(.collector) { fields.collector = to_string!(.collector) }
+      if exists(.host_collection) { fields.host_collection = to_string!(.host_collection) }
       .fields = fields
 
       # Remove top-level source fields now captured in the map
@@ -61,22 +98,37 @@ transforms:
       del(.facility)
       del(.procid)
       del(.msgid)
+      del(.tag)
+      del(.collector)
+      del(.host_collection)
 
 sinks:
-  # ClickHouse sink — writes normalized events to security.events
+  # Buffer sink — writes normalized events into NATS JetStream.
+  nats_events_buffer:
+    type: nats
+    inputs:
+      - normalize
+    url: nats://nats:4222
+    subject: hayabusa.events.normalized
+    encoding:
+      codec: json
+    jetstream:
+      enabled: true
+
+  # ClickHouse sink — writes buffered events to security.events
   clickhouse_events:
     type: clickhouse
     inputs:
-      - normalize
+      - buffered_events
     endpoint: http://clickhouse:8123
     database: security
     table: events
     skip_unknown_fields: true  # drop any fields not in the table schema
 
-  # Console sink — kept for local debugging, shows the same normalized event
+  # Console sink — kept for local debugging, shows the buffered event.
   console:
     type: console
     inputs:
-      - normalize
+      - buffered_events
     encoding:
       codec: json

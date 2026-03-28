@@ -55,10 +55,23 @@ Deliver:
 - YAML rule execution against ClickHouse
 - triggered candidates persisted to `security.alert_candidates`
 
+## Phase 7: Active transport/buffer path (completed)
+
+Deliver:
+- NATS JetStream stream/consumer bootstrap in compose startup
+- Vector route updated to `normalize -> JetStream -> ClickHouse`
+- Smoke test checks for JetStream stream/consumer/subject wiring
+
+## Phase 8: Host collector baseline (completed)
+
+Deliver:
+- Fluent Bit service added to Docker Compose for host-log collection
+- Fluent Bit forward protocol integrated into Vector ingest path
+- Smoke test validates Fluent Bit -> Vector -> JetStream -> ClickHouse flow
+
 ## Next focus
 
 - Define canonical normalized schema versioning strategy
-- Introduce NATS into the active data path (`normalize -> buffer -> store`)
 - Harden alert delivery (external destinations, auth, retries, secret management)
 - Add first saved query pack for investigation workflows
-- Expand smoke tests with NATS JetStream stream/consumer validation once subjects are defined
+- Windows event collection strategy and mapping

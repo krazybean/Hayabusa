@@ -6,6 +6,12 @@ cd "${ROOT_DIR}"
 
 TIMEOUT_SECONDS="${SMOKE_TIMEOUT_SECONDS:-120}"
 MAX_EVENTS_BYTES="${SMOKE_MAX_EVENTS_BYTES:-1073741824}"
+NATS_STREAM_NAME="${SMOKE_NATS_STREAM_NAME:-HAYABUSA_EVENTS}"
+NATS_CONSUMER_NAME="${SMOKE_NATS_CONSUMER_NAME:-VECTOR_CLICKHOUSE_WRITER}"
+NATS_STREAM_SUBJECT_GLOB="${SMOKE_NATS_STREAM_SUBJECT_GLOB:-hayabusa.events.>}"
+NATS_URL="${SMOKE_NATS_URL:-nats://nats:4222}"
+FLUENT_INGEST_SOURCE="${SMOKE_FLUENT_INGEST_SOURCE:-vector-fluent}"
+FLUENT_HOST_LOG_FILE="${SMOKE_FLUENT_HOST_LOG_FILE:-${ROOT_DIR}/data/host-logs/linux-auth.log}"
 SLEEP_SECONDS=2
 
 timestamp() {
@@ -54,6 +60,28 @@ wait_for_keeper() {
   return 1
 }
 
+run_nats_cli() {
+  docker compose run --rm --no-deps nats-init \
+    nats --server "${NATS_URL}" "$@"
+}
+
+wait_for_nats() {
+  local elapsed=0
+  printf "[%s] Waiting for NATS JetStream CLI checks\n" "$(timestamp)"
+
+  while (( elapsed < TIMEOUT_SECONDS )); do
+    if run_nats_cli account info >/dev/null 2>&1; then
+      printf "[%s] OK: NATS JetStream CLI reachable\n" "$(timestamp)"
+      return 0
+    fi
+    sleep "${SLEEP_SECONDS}"
+    elapsed=$((elapsed + SLEEP_SECONDS))
+  done
+
+  printf "[%s] ERROR: NATS JetStream did not become ready within %ss\n" "$(timestamp)" "${TIMEOUT_SECONDS}" >&2
+  return 1
+}
+
 wait_for_detection() {
   local elapsed=0
   printf "[%s] Waiting for detection heartbeat\n" "$(timestamp)"
@@ -86,18 +114,67 @@ query_alert_candidates_table_exists() {
     --data-binary "SELECT count() FROM system.tables WHERE database = 'security' AND name = 'alert_candidates' FORMAT TabSeparated" | tr -d '\r\n'
 }
 
+query_ingest_source_count() {
+  local ingest_source="$1"
+  curl -fsS "http://localhost:8123/" \
+    --data-binary "SELECT count() FROM security.events WHERE ingest_source = '${ingest_source}' FORMAT TabSeparated" | tr -d '\r\n'
+}
+
+query_nats_stream_info() {
+  run_nats_cli stream info "${NATS_STREAM_NAME}"
+}
+
 echo "Running Hayabusa component smoke test..."
 docker compose ps
 
 wait_for_http "ClickHouse" "http://localhost:8123/ping" "ok"
 wait_for_keeper
-wait_for_http "NATS monitoring" "http://localhost:8222/healthz"
+wait_for_nats
 wait_for_http "Vector API" "http://localhost:8686/health"
 wait_for_http "Prometheus" "http://localhost:9090/-/healthy" "healthy"
 wait_for_http "Grafana" "http://localhost:3000/api/health" "\"database\"[[:space:]]*:[[:space:]]*\"ok\""
 wait_for_detection
 
-echo "Validating ingest path (Vector -> ClickHouse)..."
+echo "Validating transport path (Vector -> NATS JetStream -> ClickHouse)..."
+nats_stream_info="$(query_nats_stream_info)"
+if grep -q "Stream ${NATS_STREAM_NAME}" <<<"${nats_stream_info}"; then
+  printf "[%s] OK: JetStream stream present (%s)\n" "$(timestamp)" "${NATS_STREAM_NAME}"
+else
+  printf "[%s] ERROR: JetStream stream missing (%s)\n" "$(timestamp)" "${NATS_STREAM_NAME}" >&2
+  exit 1
+fi
+
+nats_consumer_info="$(run_nats_cli consumer info "${NATS_STREAM_NAME}" "${NATS_CONSUMER_NAME}")"
+if grep -q "Name: ${NATS_CONSUMER_NAME}" <<<"${nats_consumer_info}"; then
+  printf "[%s] OK: JetStream consumer present (%s)\n" "$(timestamp)" "${NATS_CONSUMER_NAME}"
+else
+  printf "[%s] ERROR: JetStream consumer missing (%s)\n" "$(timestamp)" "${NATS_CONSUMER_NAME}" >&2
+  exit 1
+fi
+
+if grep -Fq "Subjects: ${NATS_STREAM_SUBJECT_GLOB}" <<<"${nats_stream_info}"; then
+  printf "[%s] OK: JetStream stream subject configured (%s)\n" "$(timestamp)" "${NATS_STREAM_SUBJECT_GLOB}"
+else
+  printf "[%s] ERROR: JetStream stream subject not found (%s)\n" "$(timestamp)" "${NATS_STREAM_SUBJECT_GLOB}" >&2
+  exit 1
+fi
+
+if docker compose ps --services --status running | grep -q '^fluent-bit$'; then
+  fluent_before="$(query_ingest_source_count "${FLUENT_INGEST_SOURCE}")"
+  ./scripts/generate-host-logs.sh "${FLUENT_HOST_LOG_FILE}" >/dev/null
+  sleep 3
+  fluent_after="$(query_ingest_source_count "${FLUENT_INGEST_SOURCE}")"
+
+  if [[ "${fluent_after}" =~ ^[0-9]+$ ]] && [[ "${fluent_before}" =~ ^[0-9]+$ ]] && (( fluent_after > fluent_before )); then
+    printf "[%s] OK: Fluent Bit host log flow increased %s events (%s -> %s)\n" "$(timestamp)" "${FLUENT_INGEST_SOURCE}" "${fluent_before}" "${fluent_after}"
+  else
+    printf "[%s] ERROR: Fluent Bit host log flow did not increase %s events (%s -> %s)\n" "$(timestamp)" "${FLUENT_INGEST_SOURCE}" "${fluent_before}" "${fluent_after}" >&2
+    exit 1
+  fi
+else
+  printf "[%s] INFO: fluent-bit service not running; skipping collector path check\n" "$(timestamp)"
+fi
+
 before_count="$(query_clickhouse_count)"
 sleep 5
 after_count="$(query_clickhouse_count)"

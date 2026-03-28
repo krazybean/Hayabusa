@@ -28,8 +28,10 @@ This repository is a self-hosted, mostly offline, FOSS-first starter scaffold fo
 flowchart LR
     DemoLogs[Vector Demo Logs] --> Vector[Vector Normalize]
     SyslogFeed[External Syslog TCP/UDP 1514] --> Vector
-    Vector --> Events[(ClickHouse security.events)]
-    Vector --> Console[Vector Console Sink]
+    FluentBit[Fluent Bit Host Tail] --> Vector
+    Vector --> Nats[(NATS JetStream)]
+    Nats --> Events[(ClickHouse security.events)]
+    Nats --> Console[Vector Console Sink]
 
     Events --> Detection[Detection Service]
     Detection --> Candidates[(ClickHouse security.alert_candidates)]
@@ -41,18 +43,18 @@ flowchart LR
     Grafana --> AlertRouter[alert-sink Router]
     AlertRouter -. optional forward .-> ExternalWebhook[External Webhook]
 
-    Vector -. future buffer path .-> NATS[(NATS JetStream)]
 ```
-
-NATS JetStream and ClickHouse Keeper run in this stack now to preserve clean boundaries for later buffering and clustering. The active ingest path is currently direct `Vector -> ClickHouse`.
+Active ingest path is now `Vector -> NATS JetStream -> ClickHouse`, with ClickHouse Keeper preserved for future clustering.
 
 ## Current MVP status
 
 - Foundation services are defined and runnable in Docker Compose
 - Vector normalization is implemented with a demo event source
-- ClickHouse database/table ingest path is configured
+- ClickHouse database/table ingest path is configured through JetStream
 - Prometheus scraping and Grafana datasource provisioning are in place
 - SQL-first detection engine MVP writes triggered candidates to `security.alert_candidates`
+- JetStream stream bootstrap is automated (`HAYABUSA_EVENTS` + `VECTOR_CLICKHOUSE_WRITER`)
+- Fluent Bit host collector baseline is active (`forward -> Vector:24224`)
 
 ## Operating hygiene
 
@@ -70,10 +72,12 @@ NATS JetStream and ClickHouse Keeper run in this stack now to preserve clean bou
 │   ├── environments/
 │   ├── global/
 │   ├── clickhouse/
+│   ├── fluent-bit/
 │   ├── grafana/
 │   ├── prometheus/
 │   ├── rules/
 │   └── vector/
+├── data/
 ├── docs/
 ├── scripts/
 ├── services/
@@ -128,6 +132,21 @@ View live normalized traffic:
 
 ```bash
 docker compose logs -f vector
+```
+
+View Fluent Bit collector logs:
+
+```bash
+docker compose logs -f fluent-bit
+```
+
+Check JetStream stream + consumer status:
+
+```bash
+docker compose run --rm --no-deps nats-init \
+  nats --server nats://nats:4222 stream info HAYABUSA_EVENTS
+docker compose run --rm --no-deps nats-init \
+  nats --server nats://nats:4222 consumer info HAYABUSA_EVENTS VECTOR_CLICKHOUSE_WRITER
 ```
 
 Query stored events in ClickHouse:
@@ -190,10 +209,28 @@ for i in 1 2 3 4; do
 done
 ```
 
+## Fluent Bit host collector feed
+
+Fluent Bit tails local files in `data/host-logs` and forwards records to Vector over `forward` protocol.
+
+Generate synthetic host auth lines:
+
+```bash
+./scripts/generate-host-logs.sh
+```
+
+Query recent Fluent-ingested events:
+
+```bash
+curl -s http://localhost:8123 --data-binary \
+  "SELECT ts, ingest_source, message FROM security.events WHERE ingest_source = 'vector-fluent' ORDER BY ts DESC LIMIT 20 FORMAT PrettyCompact"
+```
+
 ## Storage budget guardrail (1 GiB)
 
 The local MVP uses a 1 GiB budget target for `security.events` to keep synthetic test traffic bounded.
 Default TTL for new deployments is `7 days`.
+JetStream buffering is also bounded (`HAYABUSA_EVENTS`: max bytes `256 MiB`, max age `24h`).
 
 For an existing running table, apply TTL update once:
 
