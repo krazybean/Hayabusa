@@ -33,7 +33,7 @@
 - [x] partition strategy
 - [x] retention policy
 - [x] storage budget guardrail (1 GiB target)
-- [ ] sample query set
+- [x] sample query set
 
 ## Presentation / Alerting
 - [x] Grafana dashboard provisioning
@@ -49,6 +49,7 @@
 - [x] YAML rule schema + example enabled rule
 - [x] first security-focused detection rule (failed-login burst)
 - [x] Windows EventID-focused rule pack (auth, lockout, service install, privileged group)
+- [x] first multi-signal correlation rule (4625 -> 4740)
 - [x] per-rule cooldown suppression (`cooldown_seconds`)
 - [x] alert candidate table (`security.alert_candidates`)
 - [x] alert routing and notifications (local router + optional external forwarding)

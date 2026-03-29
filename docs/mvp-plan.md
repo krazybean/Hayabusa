@@ -87,9 +87,15 @@ Deliver:
 - Windows security scenario generator for local validation
 - Rule cooldown suppression support to reduce repeated candidate spam
 
+## Phase 11: Correlation + investigation starter pack (completed)
+
+Deliver:
+- First multi-signal Windows correlation rule (`4625 -> 4740`)
+- Starter investigation query pack for ClickHouse triage workflows
+
 ## Next focus
 
 - Define canonical normalized schema versioning strategy
 - Harden alert delivery (external destinations, auth, retries, secret management)
-- Add first saved query pack for investigation workflows
+- Add saved query views in Grafana from investigation query pack
 - First real Windows host deployment and enrollment lifecycle automation

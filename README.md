@@ -68,6 +68,7 @@ Active ingest path is now `Vector -> NATS JetStream -> ClickHouse`, with ClickHo
 - Detection engine details: `docs/detection-engine.md`
 - Alert routing details: `docs/alert-routing.md`
 - Windows collection runbook: `docs/windows-event-collection.md`
+- Investigation queries: `docs/investigation-query-pack.md`
 
 ## Repository layout
 
