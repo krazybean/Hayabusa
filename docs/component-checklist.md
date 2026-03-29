@@ -46,6 +46,7 @@
 - [x] correlation detection alert rules (Windows multi-signal chain alerts)
 - [x] notification routing policy and contact points (webhook MVP + dedupe)
 - [x] detection-engine-backed alert candidate generation
+- [x] alert router retry/backoff + timeout controls for external forwarding
 
 ## Detection
 - [x] detection service container in compose

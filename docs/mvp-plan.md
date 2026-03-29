@@ -108,6 +108,6 @@ Deliver:
 ## Next focus
 
 - Define canonical normalized schema versioning strategy
-- Harden alert delivery (external destinations, auth, retries, secret management)
+- Expand alert delivery destinations (email/chat/on-call fan-out) on top of current retry/auth hardening
 - Add investigation playbooks and analyst response runbooks
 - First real Windows host deployment and enrollment lifecycle automation

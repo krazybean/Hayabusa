@@ -210,6 +210,11 @@ HAYABUSA_EXTERNAL_WEBHOOK_URL=https://example-alert-endpoint.local/webhook
 HAYABUSA_EXTERNAL_WEBHOOK_TOKEN=replace_me
 # Optional:
 # HAYABUSA_EXTERNAL_WEBHOOK_TOKEN_FILE=/run/secrets/hayabusa_external_webhook_token
+# Retry/timeout hardening defaults:
+# HAYABUSA_ALERT_ROUTER_FORWARD_TIMEOUT_MS=5000
+# HAYABUSA_ALERT_ROUTER_FORWARD_RETRY_MAX_ATTEMPTS=3
+# HAYABUSA_ALERT_ROUTER_FORWARD_RETRY_BASE_MS=500
+# HAYABUSA_ALERT_ROUTER_FORWARD_RETRY_MAX_MS=5000
 ```
 
 Send synthetic failed-login events (to validate `security_failed_login_burst`):

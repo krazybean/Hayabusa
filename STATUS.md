@@ -28,6 +28,7 @@ Build toward Wazuh-comparable capability while keeping the local Docker MVP stab
 - Detection correlation: Windows multi-signal rule pack active (`4625->4740`, `4625->4697/7045`, `4625->4728/4732/4756`, `4740->4697/7045`)
 - Detection noise control: per-rule `cooldown_seconds` suppression active
 - Alert routing MVP: Grafana contact points + policy + dedupe to local `alert-sink` router webhook, with optional external forward auth token
+- Alert router hardening: external webhook timeout + retry/backoff controls (`HAYABUSA_ALERT_ROUTER_FORWARD_*`)
 - Investigation query pack: starter SQL hunts added (`docs/investigation-query-pack.md`)
 - Investigation dashboard: provisioned (`Hayabusa Investigations`)
 
@@ -45,9 +46,9 @@ Build toward Wazuh-comparable capability while keeping the local Docker MVP stab
 ## Next Priority Queue
 
 1. First real Windows host deployment using endpoint enrollment bundle
-2. Alert delivery hardening (external destinations, retries, auth, secrets)
-3. Investigation workflow playbooks tied to dashboard pivots
-4. Detection tuning (false-positive controls, host/user-level suppressions)
+2. Investigation workflow playbooks tied to dashboard pivots
+3. Detection tuning (false-positive controls, host/user-level suppressions)
+4. Alert destination expansion (email/chat/on-call fan-out targets)
 
 ## Session Rebuild Fast Path
 
