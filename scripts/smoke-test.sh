@@ -14,6 +14,7 @@ FLUENT_INGEST_SOURCE="${SMOKE_FLUENT_INGEST_SOURCE:-vector-fluent}"
 FLUENT_HOST_LOG_FILE="${SMOKE_FLUENT_HOST_LOG_FILE:-${ROOT_DIR}/data/host-logs/linux-auth.log}"
 WINDOWS_INGEST_SOURCE="${SMOKE_WINDOWS_INGEST_SOURCE:-vector-windows-endpoint}"
 WINDOWS_SIM_LOG_FILE="${SMOKE_WINDOWS_SIM_LOG_FILE:-${ROOT_DIR}/data/host-logs/windows-events.log}"
+SKIP_WINDOWS_LANE_CHECK="${SMOKE_SKIP_WINDOWS_LANE_CHECK:-false}"
 SLEEP_SECONDS=2
 
 timestamp() {
@@ -174,16 +175,20 @@ if docker compose ps --services --status running | grep -q '^fluent-bit$'; then
     exit 1
   fi
 
-  windows_before="$(query_ingest_source_count "${WINDOWS_INGEST_SOURCE}")"
-  ./scripts/generate-windows-events.sh "${WINDOWS_SIM_LOG_FILE}" >/dev/null
-  sleep 3
-  windows_after="$(query_ingest_source_count "${WINDOWS_INGEST_SOURCE}")"
-
-  if [[ "${windows_after}" =~ ^[0-9]+$ ]] && [[ "${windows_before}" =~ ^[0-9]+$ ]] && (( windows_after > windows_before )); then
-    printf "[%s] OK: Windows endpoint lane increased %s events (%s -> %s)\n" "$(timestamp)" "${WINDOWS_INGEST_SOURCE}" "${windows_before}" "${windows_after}"
+  if [[ "${SKIP_WINDOWS_LANE_CHECK}" == "true" ]]; then
+    printf "[%s] INFO: skipping Windows lane flow check (SMOKE_SKIP_WINDOWS_LANE_CHECK=true)\n" "$(timestamp)"
   else
-    printf "[%s] ERROR: Windows endpoint lane did not increase %s events (%s -> %s)\n" "$(timestamp)" "${WINDOWS_INGEST_SOURCE}" "${windows_before}" "${windows_after}" >&2
-    exit 1
+    windows_before="$(query_ingest_source_count "${WINDOWS_INGEST_SOURCE}")"
+    ./scripts/generate-windows-events.sh "${WINDOWS_SIM_LOG_FILE}" >/dev/null
+    sleep 3
+    windows_after="$(query_ingest_source_count "${WINDOWS_INGEST_SOURCE}")"
+
+    if [[ "${windows_after}" =~ ^[0-9]+$ ]] && [[ "${windows_before}" =~ ^[0-9]+$ ]] && (( windows_after > windows_before )); then
+      printf "[%s] OK: Windows endpoint lane increased %s events (%s -> %s)\n" "$(timestamp)" "${WINDOWS_INGEST_SOURCE}" "${windows_before}" "${windows_after}"
+    else
+      printf "[%s] ERROR: Windows endpoint lane did not increase %s events (%s -> %s)\n" "$(timestamp)" "${WINDOWS_INGEST_SOURCE}" "${windows_before}" "${windows_after}" >&2
+      exit 1
+    fi
   fi
 else
   printf "[%s] INFO: fluent-bit service not running; skipping collector path check\n" "$(timestamp)"

@@ -20,6 +20,7 @@ Windows Event Log (Application/System/Security)
 - Replace `HAYABUSA_VECTOR_HOST` with the reachable IP or hostname for the Hayabusa Vector service.
 - Windows endpoint validation script: `scripts/windows-endpoint-check.sh`
 - Windows real-host cutover guard script: `scripts/windows-real-host-cutover-check.sh`
+- Windows permit-origin helper script: `scripts/set-windows-permit-origin.sh`
 - mTLS cert generation script: `scripts/generate-windows-forward-certs.sh`
 
 ## Field Expectations in Hayabusa
@@ -68,6 +69,7 @@ This exercises the dedicated Windows lane (`24225`) using the local Fluent Bit c
 1. Enroll endpoint bundle:
    - `./scripts/enroll-windows-endpoint.sh --endpoint-id WIN-ENDPOINT-01 --vector-host <hayabusa-host-ip>`
 2. Update `configs/vector/vector.yaml` `permit_origin` to endpoint CIDR(s), typically `/32` per host.
+   - Helper: `./scripts/set-windows-permit-origin.sh --cidr 192.168.10.22/32`
 3. Remove broad CIDRs (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`) for production-like cutover.
 4. Restart Vector:
    - `DOCKER_CONFIG=/tmp/docker-nocreds docker compose up -d vector`
