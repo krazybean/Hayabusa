@@ -19,6 +19,7 @@ Current status is local MVP foundation, not full feature parity yet.
 - Active buffered ingest path (`Vector -> NATS JetStream -> ClickHouse`)
 - Host collector baseline with Fluent Bit (`tail -> forward -> Vector`)
 - Windows event collection strategy defined (`winevtlog -> forward -> Vector:24225`) + validation script
+- Windows lane locally validated via simulator traffic (`vector-windows-endpoint`)
 - Normalized events stored in ClickHouse (`security.events`)
 - External syslog ingestion over TCP/UDP (`1514`)
 - Provisioned Grafana dashboard for event visibility
@@ -41,7 +42,7 @@ Current status is local MVP foundation, not full feature parity yet.
 
 ## Next parity-focused milestones
 
-1. Windows endpoint rollout validation (real host test, TLS/auth hardening)
+1. Windows endpoint real-host onboarding (replace simulator traffic, TLS/auth hardening)
 2. Detection content expansion (correlation + broader security ruleset)
 3. Investigation workflow acceleration (saved hunts, pivot views, case linkage)
 4. Endpoint/agent management model for Wazuh-comparable host visibility

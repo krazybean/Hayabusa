@@ -34,10 +34,20 @@ Vector normalization writes:
    - `docker compose logs -f vector`
    - `./scripts/windows-endpoint-check.sh`
 
+## Local Simulation Path
+
+For local validation before onboarding a real endpoint:
+
+1. `./scripts/generate-windows-events.sh`
+2. `./scripts/windows-endpoint-check.sh`
+
+This exercises the dedicated Windows lane (`24225`) using the local Fluent Bit collector.
+
 ## Current Scope
 
 - Baseline strategy and config template: complete
 - Dedicated Windows ingress lane in Vector (`24225`) with source tagging: complete
+- Local simulator and validation script: complete
 - Production hardening pending:
   - TLS and authentication on forward path (template placeholders included)
   - endpoint enrollment/identity strategy

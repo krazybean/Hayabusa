@@ -236,6 +236,13 @@ Use the template at `configs/fluent-bit/windows/fluent-bit-windows.conf` on Wind
 - `docs/windows-event-collection.md`
 - `./scripts/windows-endpoint-check.sh`
 
+Local simulator validation (no Windows host required):
+
+```bash
+./scripts/generate-windows-events.sh
+./scripts/windows-endpoint-check.sh
+```
+
 ## Storage budget guardrail (1 GiB)
 
 The local MVP uses a 1 GiB budget target for `security.events` to keep synthetic test traffic bounded.

@@ -75,10 +75,11 @@ Deliver:
 - Windows Fluent Bit `winevtlog` config template
 - Baseline field mapping expectations into Vector normalization
 - Windows collection runbook and endpoint validation script
+- Local simulator path for Windows lane verification
 
 ## Next focus
 
 - Define canonical normalized schema versioning strategy
 - Harden alert delivery (external destinations, auth, retries, secret management)
 - Add first saved query pack for investigation workflows
-- Windows endpoint rollout validation (real host test + hardening)
+- Windows endpoint real-host onboarding and hardening
