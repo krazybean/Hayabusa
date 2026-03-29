@@ -88,6 +88,7 @@ services:
       - "24225:24225"
     volumes:
       - ./configs/vector/vector.yaml:/etc/vector/vector.yaml:ro
+      - ./secrets/windows-forward-tls:/etc/vector/tls/windows-forward:ro
     depends_on:
       clickhouse:
         condition: service_healthy

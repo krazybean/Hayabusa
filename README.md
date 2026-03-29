@@ -57,6 +57,7 @@ Active ingest path is now `Vector -> NATS JetStream -> ClickHouse`, with ClickHo
 - JetStream stream bootstrap is automated (`HAYABUSA_EVENTS` + `VECTOR_CLICKHOUSE_WRITER`)
 - Fluent Bit host collector baseline is active (`forward -> Vector:24224`)
 - Windows event collector template is defined (`winevtlog -> forward -> Vector:24225`)
+- Windows endpoint hardening toolkit is included (mTLS templates + cert generation script)
 
 ## Operating hygiene
 
@@ -235,6 +236,12 @@ Use the template at `configs/fluent-bit/windows/fluent-bit-windows.conf` on Wind
 
 - `docs/windows-event-collection.md`
 - `./scripts/windows-endpoint-check.sh`
+
+mTLS hardening prep:
+
+```bash
+./scripts/generate-windows-forward-certs.sh
+```
 
 Local simulator validation (no Windows host required):
 

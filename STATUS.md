@@ -16,6 +16,7 @@ Build toward Wazuh-comparable capability while keeping the local Docker MVP stab
 - Host collector path: `Fluent Bit (tail) -> Vector forward (24224)` active
 - Windows event collector path: strategy + template + validation script (`winevtlog -> forward -> Vector:24225`)
 - Windows lane local simulator: active (`./scripts/generate-windows-events.sh` -> `vector-windows-endpoint`)
+- Windows mTLS hardening toolkit: ready (`./scripts/generate-windows-forward-certs.sh` + mTLS templates)
 - Storage TTL: `7 days` on `security.events`
 - Storage budget guardrail: `1 GiB` target via `./scripts/storage-budget-guard.sh`
 - Grafana alerts: `Hayabusa Ingest Stalled`, `Hayabusa Events Storage Near Budget`, `Hayabusa Security Failed Login Burst`
@@ -26,7 +27,7 @@ Build toward Wazuh-comparable capability while keeping the local Docker MVP stab
 ## Component Progress
 
 - Foundation: complete for MVP
-- Collection: strong-mvp (Fluent Bit active; Windows lane validated locally)
+- Collection: strong-mvp (Windows lane validated locally; mTLS toolkit ready)
 - Ingestion/Normalization: partial
 - Transport (NATS in active path): MVP complete
 - Storage: solid baseline
@@ -36,7 +37,7 @@ Build toward Wazuh-comparable capability while keeping the local Docker MVP stab
 
 ## Next Priority Queue
 
-1. Windows endpoint real-host onboarding (replace simulator with endpoint traffic)
+1. Windows endpoint real-host onboarding with mTLS enabled
 2. Detection content expansion (security-focused rules + correlation)
 3. Alert delivery hardening (external destinations, retries, auth, secrets)
 4. Investigation query pack and saved workflows

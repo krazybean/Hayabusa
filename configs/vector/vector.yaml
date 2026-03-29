@@ -31,6 +31,12 @@ sources:
     mode: tcp
     address: 0.0.0.0:24225
     connection_limit: 200
+    # Default allowlist covers local lab/private networks; tighten this to explicit endpoint CIDRs.
+    permit_origin:
+      - 10.0.0.0/8
+      - 172.16.0.0/12
+      - 192.168.0.0/16
+      - 127.0.0.0/8
 
   # Buffered normalized events pulled back from JetStream before storage.
   buffered_events:

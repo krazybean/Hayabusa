@@ -205,6 +205,10 @@ cython_debug/
 .DS_Store
 **/.DS_Store
 
+# Local TLS material (never commit private keys/certs)
+secrets/windows-forward-tls/*
+!secrets/windows-forward-tls/.gitkeep
+
 # Marimo
 marimo/_static/
 marimo/_lsp/

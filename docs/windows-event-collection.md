@@ -1,4 +1,4 @@
-# Windows Event Collection (Baseline)
+# Windows Event Collection
 
 This document defines the Windows collection path for the current Hayabusa MVP.
 
@@ -15,8 +15,10 @@ Windows Event Log (Application/System/Security)
 ## Config Template
 
 - Windows collector template: `configs/fluent-bit/windows/fluent-bit-windows.conf`
+- Windows collector mTLS template: `configs/fluent-bit/windows/fluent-bit-windows-mtls.conf`
 - Replace `HAYABUSA_VECTOR_HOST` with the reachable IP or hostname for the Hayabusa Vector service.
 - Windows endpoint validation script: `scripts/windows-endpoint-check.sh`
+- mTLS cert generation script: `scripts/generate-windows-forward-certs.sh`
 
 ## Field Expectations in Hayabusa
 
@@ -43,12 +45,29 @@ For local validation before onboarding a real endpoint:
 
 This exercises the dedicated Windows lane (`24225`) using the local Fluent Bit collector.
 
+## mTLS Hardening (Real Endpoint)
+
+1. Generate certs locally:
+   - `./scripts/generate-windows-forward-certs.sh`
+2. Merge TLS settings from:
+   - `configs/vector/windows-forward-mtls-example.yaml`
+   into `sources.ingest_fluent_windows_forward` in `configs/vector/vector.yaml`
+3. Restart Vector:
+   - `DOCKER_CONFIG=/tmp/docker-nocreds docker compose up -d vector`
+4. On Windows endpoint, use:
+   - `configs/fluent-bit/windows/fluent-bit-windows-mtls.conf`
+5. Copy certs to endpoint:
+   - `ca.crt`, `client.crt`, `client.key`
+6. Tighten `permit_origin` in Vector to explicit endpoint CIDRs.
+7. Validate:
+   - `./scripts/windows-endpoint-check.sh`
+
 ## Current Scope
 
 - Baseline strategy and config template: complete
 - Dedicated Windows ingress lane in Vector (`24225`) with source tagging: complete
 - Local simulator and validation script: complete
-- Production hardening pending:
-  - TLS and authentication on forward path (template placeholders included)
+- mTLS hardening toolkit (cert script + templates): complete
+- Production hardening still pending:
   - endpoint enrollment/identity strategy
   - policy rollout/update mechanism
