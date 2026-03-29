@@ -15,6 +15,17 @@ Watch incoming webhook payloads:
 docker compose logs -f alert-sink
 ```
 
+Current provisioned alert classes:
+
+- Ingestion health: `Hayabusa Ingest Stalled`
+- Storage budget: `Hayabusa Events Storage Near Budget`
+- Detection baseline: `Hayabusa Security Failed Login Burst`
+- Detection correlations:
+  - `Hayabusa Windows Failed Logon Followed by Lockout`
+  - `Hayabusa Windows Failed Logon Followed by Service Install`
+  - `Hayabusa Windows Failed Logon Followed by Group Change`
+  - `Hayabusa Windows Lockout Followed by Service Install`
+
 ## External forwarding (optional)
 
 Configure using environment variables (recommended in local `.env`, which is gitignored):

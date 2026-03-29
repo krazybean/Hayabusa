@@ -19,9 +19,10 @@ Build toward Wazuh-comparable capability while keeping the local Docker MVP stab
 - Windows mTLS hardening toolkit: ready (`./scripts/generate-windows-forward-certs.sh` + mTLS templates)
 - Windows lane mTLS: enabled in active stack (`vector` source TLS + fluent-bit client cert output)
 - Windows endpoint enrollment: bundle script + endpoint-specific client certs (`./scripts/enroll-windows-endpoint.sh`)
+- Windows real-host cutover guard: endpoint-specific validation + CIDR hardening check (`./scripts/windows-real-host-cutover-check.sh`)
 - Storage TTL: `7 days` on `security.events`
 - Storage budget guardrail: `1 GiB` target via `./scripts/storage-budget-guard.sh`
-- Grafana alerts: `Hayabusa Ingest Stalled`, `Hayabusa Events Storage Near Budget`, `Hayabusa Security Failed Login Burst`
+- Grafana alerts: ingest stall + storage budget + failed-login burst + Windows correlation rule alerts
 - Detection engine MVP: active (`detection` service writes `security.alert_candidates`)
 - Detection content: baseline + Windows EventID pack enabled (`4625`, `4740`, `4697/7045`, `4728/4732/4756`)
 - Detection correlation: Windows multi-signal rule pack active (`4625->4740`, `4625->4697/7045`, `4625->4728/4732/4756`, `4740->4697/7045`)

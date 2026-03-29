@@ -99,6 +99,12 @@ Deliver:
 - Additional Windows correlation rules (`4625->4697/7045`, `4625->4728/4732/4756`, `4740->4697/7045`)
 - Provisioned Grafana investigation dashboard (`Hayabusa Investigations`)
 
+## Phase 13: Correlation alerting + cutover guardrails (completed)
+
+Deliver:
+- Grafana alert rules for Windows multi-signal correlation detections
+- Real-host cutover guard script for endpoint-specific validation + `permit_origin` hardening checks
+
 ## Next focus
 
 - Define canonical normalized schema versioning strategy

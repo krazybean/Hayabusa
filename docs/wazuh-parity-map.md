@@ -23,6 +23,7 @@ Current status is local MVP foundation, not full feature parity yet.
 - Windows lane locally validated via simulator traffic (`vector-windows-endpoint`)
 - Windows lane mTLS enabled in active stack path (Vector source + Fluent Bit client auth)
 - Windows endpoint enrollment bundle workflow with endpoint-specific client cert generation
+- Windows real-host cutover guard script (`windows-real-host-cutover-check.sh`) for endpoint-specific validation and CIDR hardening checks
 - Normalized events stored in ClickHouse (`security.events`)
 - External syslog ingestion over TCP/UDP (`1514`)
 - Provisioned Grafana dashboard for event visibility
@@ -43,6 +44,7 @@ Current status is local MVP foundation, not full feature parity yet.
 - Investigation query pack with starter SQL hunts (`docs/investigation-query-pack.md`)
 - Grafana investigation dashboard (`Hayabusa Investigations`) for one-click pivot queries
 - Detection-candidate-driven Grafana alert (`Hayabusa Security Failed Login Burst`)
+- Grafana correlation alert rules for Windows multi-signal detections
 - Alert routing MVP with dedupe policy via Grafana contact points (local router + optional external forwarding with auth token support)
 
 ## Major gaps vs Wazuh-style capabilities

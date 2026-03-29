@@ -116,6 +116,11 @@ Active ingest path is now `Vector -> NATS JetStream -> ClickHouse`, with ClickHo
 - Grafana alert rule: `Alerting -> Alert rules -> Hayabusa Ingest Stalled`
 - Grafana storage alert rule: `Alerting -> Alert rules -> Hayabusa Events Storage Near Budget`
 - Grafana detection alert rule: `Alerting -> Alert rules -> Hayabusa Security Failed Login Burst`
+- Grafana correlation alert rules:
+  - `Hayabusa Windows Failed Logon Followed by Lockout`
+  - `Hayabusa Windows Failed Logon Followed by Service Install`
+  - `Hayabusa Windows Failed Logon Followed by Group Change`
+  - `Hayabusa Windows Lockout Followed by Service Install`
 
 ## External syslog feed
 
@@ -239,6 +244,7 @@ Use the template at `configs/fluent-bit/windows/fluent-bit-windows.conf` on Wind
 
 - `docs/windows-event-collection.md`
 - `./scripts/windows-endpoint-check.sh`
+- `./scripts/windows-real-host-cutover-check.sh`
 
 mTLS hardening prep:
 
@@ -254,6 +260,12 @@ Local simulator validation (no Windows host required):
 ```bash
 ./scripts/generate-windows-events.sh
 ./scripts/windows-endpoint-check.sh
+```
+
+Real-host cutover validation (endpoint-specific + CIDR hardening):
+
+```bash
+./scripts/windows-real-host-cutover-check.sh --computer WIN-ENDPOINT-01 --expected-cidr 192.168.10.22/32
 ```
 
 Trigger Windows EventID detection scenarios:

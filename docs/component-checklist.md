@@ -13,6 +13,7 @@
 - [x] Windows event collection approach
 - [x] Windows lane mTLS enabled in active stack
 - [x] Windows endpoint enrollment bundle + cert workflow
+- [x] Windows real-host cutover guard script (CIDR + endpoint-specific validation)
 - [x] syslog input plan
 - [x] test generator plan
 
@@ -42,6 +43,7 @@
 - [x] first Grafana-managed alert rule
 - [x] storage-near-budget alert rule
 - [x] detection-candidate-driven Grafana alert rule
+- [x] correlation detection alert rules (Windows multi-signal chain alerts)
 - [x] notification routing policy and contact points (webhook MVP + dedupe)
 - [x] detection-engine-backed alert candidate generation
 
