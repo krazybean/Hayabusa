@@ -93,9 +93,15 @@ Deliver:
 - First multi-signal Windows correlation rule (`4625 -> 4740`)
 - Starter investigation query pack for ClickHouse triage workflows
 
+## Phase 12: Correlation + investigation UI expansion (completed)
+
+Deliver:
+- Additional Windows correlation rules (`4625->4697/7045`, `4625->4728/4732/4756`, `4740->4697/7045`)
+- Provisioned Grafana investigation dashboard (`Hayabusa Investigations`)
+
 ## Next focus
 
 - Define canonical normalized schema versioning strategy
 - Harden alert delivery (external destinations, auth, retries, secret management)
-- Add saved query views in Grafana from investigation query pack
+- Add investigation playbooks and analyst response runbooks
 - First real Windows host deployment and enrollment lifecycle automation

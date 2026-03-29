@@ -112,6 +112,7 @@ Active ingest path is now `Vector -> NATS JetStream -> ClickHouse`, with ClickHo
 - Vector API: `http://localhost:8686`
 - Alert router (local webhook endpoint): `http://localhost:5678`
 - Grafana dashboard: `Dashboards -> Hayabusa -> Hayabusa Overview`
+- Grafana investigation dashboard: `Dashboards -> Hayabusa -> Hayabusa Investigations`
 - Grafana alert rule: `Alerting -> Alert rules -> Hayabusa Ingest Stalled`
 - Grafana storage alert rule: `Alerting -> Alert rules -> Hayabusa Events Storage Near Budget`
 - Grafana detection alert rule: `Alerting -> Alert rules -> Hayabusa Security Failed Login Burst`

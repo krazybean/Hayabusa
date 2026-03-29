@@ -11,7 +11,7 @@ Current status is local MVP foundation, not full feature parity yet.
 - Detection rules engine: **partial-strong**
 - Alert routing and notifications: **partial**
 - Endpoint management/agents: **early**
-- Investigation workflow tooling: **early-partial**
+- Investigation workflow tooling: **partial**
 - Compliance/reporting workflows: **not started**
 
 ## What is already in place
@@ -34,10 +34,14 @@ Current status is local MVP foundation, not full feature parity yet.
   - `windows_failed_logon_event_burst` (4625)
   - `windows_account_lockout_detected` (4740)
   - `windows_failed_logon_followed_by_lockout` (correlation 4625 -> 4740)
+  - `windows_failed_logon_followed_by_service_install` (correlation 4625 -> 4697/7045)
+  - `windows_failed_logon_followed_by_privileged_group_change` (correlation 4625 -> 4728/4732/4756)
+  - `windows_lockout_followed_by_service_install` (correlation 4740 -> 4697/7045)
   - `windows_service_install_detected` (4697/7045)
   - `windows_privileged_group_membership_change` (4728/4732/4756)
 - Detection cooldown controls (`cooldown_seconds`) to reduce repeat-trigger noise
 - Investigation query pack with starter SQL hunts (`docs/investigation-query-pack.md`)
+- Grafana investigation dashboard (`Hayabusa Investigations`) for one-click pivot queries
 - Detection-candidate-driven Grafana alert (`Hayabusa Security Failed Login Burst`)
 - Alert routing MVP with dedupe policy via Grafana contact points (local router + optional external forwarding with auth token support)
 
@@ -54,6 +58,6 @@ Current status is local MVP foundation, not full feature parity yet.
 ## Next parity-focused milestones
 
 1. First real Windows host deployment using enrollment bundle (replace simulator-driven validation)
-2. Detection correlation + suppressions expansion (broader content quality toward Wazuh depth)
-3. Investigation workflow acceleration (saved hunts, pivot views, case linkage in UI)
+2. Detection tuning/suppressions expansion (broader content quality toward Wazuh depth)
+3. Investigation workflow acceleration (case linkage + analyst playbooks)
 4. Endpoint/agent management model for Wazuh-comparable host visibility

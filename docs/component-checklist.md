@@ -37,6 +37,7 @@
 
 ## Presentation / Alerting
 - [x] Grafana dashboard provisioning
+- [x] investigation dashboard provisioning (`Hayabusa Investigations`)
 - [x] ClickHouse datasource provisioning
 - [x] first Grafana-managed alert rule
 - [x] storage-near-budget alert rule
@@ -49,7 +50,7 @@
 - [x] YAML rule schema + example enabled rule
 - [x] first security-focused detection rule (failed-login burst)
 - [x] Windows EventID-focused rule pack (auth, lockout, service install, privileged group)
-- [x] first multi-signal correlation rule (4625 -> 4740)
+- [x] multi-signal Windows correlation rule pack
 - [x] per-rule cooldown suppression (`cooldown_seconds`)
 - [x] alert candidate table (`security.alert_candidates`)
 - [x] alert routing and notifications (local router + optional external forwarding)

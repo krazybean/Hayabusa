@@ -17,6 +17,9 @@ Run YAML-defined SQL rules on a schedule and persist triggered detections.
   - `windows_failed_logon_event_burst` (Windows EventID 4625 burst)
   - `windows_account_lockout_detected` (Windows EventID 4740)
   - `windows_failed_logon_followed_by_lockout` (correlation: 4625 -> 4740)
+  - `windows_failed_logon_followed_by_service_install` (correlation: 4625 -> 4697/7045)
+  - `windows_failed_logon_followed_by_privileged_group_change` (correlation: 4625 -> 4728/4732/4756)
+  - `windows_lockout_followed_by_service_install` (correlation: 4740 -> 4697/7045)
   - `windows_service_install_detected` (Windows EventID 4697/7045)
   - `windows_privileged_group_membership_change` (Windows EventID 4728/4732/4756)
 - Grafana alert route: detection candidates are routed via notification policy to `alert-sink` (router webhook)
@@ -83,4 +86,11 @@ Then verify correlation rule specifically:
 ```bash
 curl -s http://localhost:8123 --data-binary \
   "SELECT ts, rule_id, severity, hits FROM security.alert_candidates WHERE rule_id = 'windows_failed_logon_followed_by_lockout' ORDER BY ts DESC LIMIT 10 FORMAT PrettyCompact"
+```
+
+Then view correlation-family triggers:
+
+```bash
+curl -s http://localhost:8123 --data-binary \
+  "SELECT ts, rule_id, severity, hits FROM security.alert_candidates WHERE rule_id LIKE 'windows_%followed_by_%' ORDER BY ts DESC LIMIT 20 FORMAT PrettyCompact"
 ```

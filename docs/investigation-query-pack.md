@@ -1,6 +1,7 @@
 # Investigation Query Pack (Starter)
 
 SQL-first starter hunts for local MVP triage against ClickHouse.
+Most of these are also provisioned in Grafana dashboard `Hayabusa Investigations`.
 
 Run queries with:
 

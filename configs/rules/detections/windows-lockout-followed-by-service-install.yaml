@@ -1,0 +1,25 @@
+id: windows_lockout_followed_by_service_install
+name: Windows Lockout Followed by Service Install
+description: Detect hosts where account lockout events (4740) are followed by service install events (4697/7045) within 15 minutes.
+severity: high
+enabled: true
+threshold_op: gte
+threshold_value: 1
+cooldown_seconds: 900
+query: |
+  SELECT count()
+  FROM (
+    SELECT install.fields['computer'] AS computer
+    FROM security.events AS install
+    INNER JOIN security.events AS lockout
+      ON lockout.fields['computer'] = install.fields['computer']
+      AND lockout.ingest_source = 'vector-windows-endpoint'
+      AND lockout.fields['event_id'] = '4740'
+      AND lockout.ts <= install.ts
+      AND lockout.ts >= install.ts - INTERVAL 15 MINUTE
+    WHERE install.ts > now() - INTERVAL 20 MINUTE
+      AND install.ingest_source = 'vector-windows-endpoint'
+      AND install.fields['event_id'] IN ('4697', '7045')
+      AND install.fields['computer'] != ''
+    GROUP BY computer
+  )

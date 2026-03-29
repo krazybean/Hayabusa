@@ -24,10 +24,11 @@ Build toward Wazuh-comparable capability while keeping the local Docker MVP stab
 - Grafana alerts: `Hayabusa Ingest Stalled`, `Hayabusa Events Storage Near Budget`, `Hayabusa Security Failed Login Burst`
 - Detection engine MVP: active (`detection` service writes `security.alert_candidates`)
 - Detection content: baseline + Windows EventID pack enabled (`4625`, `4740`, `4697/7045`, `4728/4732/4756`)
-- Detection correlation: first multi-signal Windows rule active (`windows_failed_logon_followed_by_lockout`)
+- Detection correlation: Windows multi-signal rule pack active (`4625->4740`, `4625->4697/7045`, `4625->4728/4732/4756`, `4740->4697/7045`)
 - Detection noise control: per-rule `cooldown_seconds` suppression active
 - Alert routing MVP: Grafana contact points + policy + dedupe to local `alert-sink` router webhook, with optional external forward auth token
 - Investigation query pack: starter SQL hunts added (`docs/investigation-query-pack.md`)
+- Investigation dashboard: provisioned (`Hayabusa Investigations`)
 
 ## Component Progress
 
@@ -43,9 +44,9 @@ Build toward Wazuh-comparable capability while keeping the local Docker MVP stab
 ## Next Priority Queue
 
 1. First real Windows host deployment using endpoint enrollment bundle
-2. Detection correlation expansion (additional multi-signal rules and suppressions)
-3. Alert delivery hardening (external destinations, retries, auth, secrets)
-4. Saved investigation workflows in Grafana and runbook playbooks
+2. Alert delivery hardening (external destinations, retries, auth, secrets)
+3. Investigation workflow playbooks tied to dashboard pivots
+4. Detection tuning (false-positive controls, host/user-level suppressions)
 
 ## Session Rebuild Fast Path
 
