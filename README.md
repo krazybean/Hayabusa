@@ -57,7 +57,8 @@ Active ingest path is now `Vector -> NATS JetStream -> ClickHouse`, with ClickHo
 - JetStream stream bootstrap is automated (`HAYABUSA_EVENTS` + `VECTOR_CLICKHOUSE_WRITER`)
 - Fluent Bit host collector baseline is active (`forward -> Vector:24224`)
 - Windows event collector template is defined (`winevtlog -> forward -> Vector:24225`)
-- Windows endpoint hardening toolkit is included (mTLS templates + cert generation script)
+- Windows endpoint lane is mTLS-enabled in active stack path (Vector + Fluent Bit local collector)
+- Windows endpoint hardening toolkit is included (mTLS templates + cert generation + enrollment script)
 
 ## Operating hygiene
 
@@ -241,13 +242,24 @@ mTLS hardening prep:
 
 ```bash
 ./scripts/generate-windows-forward-certs.sh
+./scripts/enroll-windows-endpoint.sh --endpoint-id WIN-ENDPOINT-01 --vector-host 192.168.1.50
 ```
+
+Note: `./scripts/bootstrap.sh` auto-generates local Windows lane certs in `secrets/windows-forward-tls` when missing.
 
 Local simulator validation (no Windows host required):
 
 ```bash
 ./scripts/generate-windows-events.sh
 ./scripts/windows-endpoint-check.sh
+```
+
+Trigger Windows EventID detection scenarios:
+
+```bash
+./scripts/generate-windows-security-scenarios.sh
+curl -s http://localhost:8123 --data-binary \
+  "SELECT ts, rule_id, severity, hits FROM security.alert_candidates WHERE rule_id LIKE 'windows_%' ORDER BY ts DESC LIMIT 20 FORMAT PrettyCompact"
 ```
 
 ## Storage budget guardrail (1 GiB)

@@ -1,0 +1,14 @@
+id: windows_account_lockout_detected
+name: Windows Account Lockout Detected
+description: Detect Windows account lockout EventID 4740 in recent endpoint telemetry.
+severity: high
+enabled: true
+threshold_op: gte
+threshold_value: 1
+cooldown_seconds: 600
+query: |
+  SELECT count()
+  FROM security.events
+  WHERE ts > now() - INTERVAL 10 MINUTE
+    AND ingest_source = 'vector-windows-endpoint'
+    AND fields['event_id'] = '4740'

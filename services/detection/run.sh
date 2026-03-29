@@ -51,6 +51,22 @@ is_integer() {
   echo "$1" | grep -Eq '^[0-9]+$'
 }
 
+rule_recently_triggered() {
+  rule_id="$1"
+  cooldown_seconds="$2"
+
+  if [ "${cooldown_seconds}" -le 0 ]; then
+    return 1
+  fi
+
+  recent_count="$(query_clickhouse "SELECT count() FROM security.alert_candidates WHERE rule_id = '${rule_id}' AND ts > now() - INTERVAL ${cooldown_seconds} SECOND FORMAT TabSeparated" | tr -d '\r\n')"
+  if is_integer "${recent_count}" && [ "${recent_count}" -gt 0 ]; then
+    return 0
+  fi
+
+  return 1
+}
+
 normalize_query_for_exec() {
   # Strip a trailing semicolon and append a deterministic output format.
   printf '%s' "$1" | sed -E 's/[[:space:]]*;[[:space:]]*$//'
@@ -104,6 +120,7 @@ run_rule() {
   enabled="$(yaml_value "${rule_file}" "enabled")"
   threshold_op="$(yaml_value "${rule_file}" "threshold_op")"
   threshold_value="$(yaml_value "${rule_file}" "threshold_value")"
+  cooldown_seconds="$(yaml_value "${rule_file}" "cooldown_seconds")"
   query_block="$(yaml_query_block "${rule_file}")"
 
   [ -n "${rule_id}" ] || { log "Skipping ${rule_file}: missing id"; return 0; }
@@ -112,6 +129,7 @@ run_rule() {
   [ -n "${enabled}" ] || enabled="false"
   [ -n "${threshold_op}" ] || threshold_op="gte"
   [ -n "${threshold_value}" ] || threshold_value="1"
+  [ -n "${cooldown_seconds}" ] || cooldown_seconds="0"
 
   if [ "${enabled}" != "true" ]; then
     return 0
@@ -127,6 +145,11 @@ run_rule() {
     return 0
   fi
 
+  if ! is_integer "${cooldown_seconds}"; then
+    log "Skipping ${rule_id}: cooldown_seconds must be integer"
+    return 0
+  fi
+
   exec_query="$(normalize_query_for_exec "${query_block}")"
   hits_raw="$(query_clickhouse "${exec_query} FORMAT TabSeparated" | head -n1 | tr -d '\r' | awk '{print $1}')"
 
@@ -136,6 +159,11 @@ run_rule() {
   fi
 
   if evaluate_threshold "${hits_raw}" "${threshold_op}" "${threshold_value}"; then
+    if rule_recently_triggered "${rule_id}" "${cooldown_seconds}"; then
+      log "Suppressed rule=${rule_id} due to cooldown_seconds=${cooldown_seconds}"
+      return 0
+    fi
+
     query_compact="$(printf '%s' "${exec_query}" | tr '\n' ' ' | sed -E 's/[[:space:]]+/ /g')"
     escaped_name="$(escape_sql_string "${rule_name}")"
     escaped_query="$(escape_sql_string "${query_compact}")"

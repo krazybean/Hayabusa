@@ -8,9 +8,9 @@ Current status is local MVP foundation, not full feature parity yet.
 - Data collection/ingest baseline: **strong-mvp**
 - Storage and search baseline: **partial-strong**
 - Dashboards and visibility baseline: **partial**
-- Detection rules engine: **partial**
+- Detection rules engine: **partial-strong**
 - Alert routing and notifications: **partial**
-- Endpoint management/agents: **not started**
+- Endpoint management/agents: **early**
 - Compliance/reporting workflows: **not started**
 
 ## What is already in place
@@ -20,6 +20,8 @@ Current status is local MVP foundation, not full feature parity yet.
 - Host collector baseline with Fluent Bit (`tail -> forward -> Vector`)
 - Windows event collection strategy defined (`winevtlog -> forward -> Vector:24225`) + validation script
 - Windows lane locally validated via simulator traffic (`vector-windows-endpoint`)
+- Windows lane mTLS enabled in active stack path (Vector source + Fluent Bit client auth)
+- Windows endpoint enrollment bundle workflow with endpoint-specific client cert generation
 - Normalized events stored in ClickHouse (`security.events`)
 - External syslog ingestion over TCP/UDP (`1514`)
 - Provisioned Grafana dashboard for event visibility
@@ -27,6 +29,12 @@ Current status is local MVP foundation, not full feature parity yet.
 - 1 GiB storage budget guardrail for synthetic event volume
 - Detection engine MVP (`YAML -> SQL`) writing to `security.alert_candidates`
 - First security-focused detection rule (`security_failed_login_burst`)
+- Windows EventID detection pack:
+  - `windows_failed_logon_event_burst` (4625)
+  - `windows_account_lockout_detected` (4740)
+  - `windows_service_install_detected` (4697/7045)
+  - `windows_privileged_group_membership_change` (4728/4732/4756)
+- Detection cooldown controls (`cooldown_seconds`) to reduce repeat-trigger noise
 - Detection-candidate-driven Grafana alert (`Hayabusa Security Failed Login Burst`)
 - Alert routing MVP with dedupe policy via Grafana contact points (local router + optional external forwarding with auth token support)
 
@@ -42,7 +50,7 @@ Current status is local MVP foundation, not full feature parity yet.
 
 ## Next parity-focused milestones
 
-1. Windows endpoint real-host onboarding (replace simulator traffic, TLS/auth hardening)
-2. Detection content expansion (correlation + broader security ruleset)
+1. First real Windows host deployment using enrollment bundle (replace simulator-driven validation)
+2. Detection correlation + suppressions (broader content quality toward Wazuh depth)
 3. Investigation workflow acceleration (saved hunts, pivot views, case linkage)
 4. Endpoint/agent management model for Wazuh-comparable host visibility

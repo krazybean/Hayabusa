@@ -37,6 +37,15 @@ sources:
       - 172.16.0.0/12
       - 192.168.0.0/16
       - 127.0.0.0/8
+    # mTLS is enabled for the Windows endpoint lane.
+    # Server certs are generated locally by scripts/generate-windows-forward-certs.sh.
+    tls:
+      enabled: true
+      verify_certificate: true
+      ca_file: /etc/vector/tls/windows-forward/ca.crt
+      crt_file: /etc/vector/tls/windows-forward/server.crt
+      key_file: /etc/vector/tls/windows-forward/server.key
+      client_metadata_key: tls_client
 
   # Buffered normalized events pulled back from JetStream before storage.
   buffered_events:

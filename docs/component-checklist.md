@@ -11,6 +11,8 @@
 ## Collection
 - [x] Fluent Bit
 - [x] Windows event collection approach
+- [x] Windows lane mTLS enabled in active stack
+- [x] Windows endpoint enrollment bundle + cert workflow
 - [x] syslog input plan
 - [x] test generator plan
 
@@ -46,6 +48,8 @@
 - [x] detection service container in compose
 - [x] YAML rule schema + example enabled rule
 - [x] first security-focused detection rule (failed-login burst)
+- [x] Windows EventID-focused rule pack (auth, lockout, service install, privileged group)
+- [x] per-rule cooldown suppression (`cooldown_seconds`)
 - [x] alert candidate table (`security.alert_candidates`)
 - [x] alert routing and notifications (local router + optional external forwarding)
 

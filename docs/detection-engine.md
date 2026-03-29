@@ -12,8 +12,12 @@ Run YAML-defined SQL rules on a schedule and persist triggered detections.
 - Output table: `security.alert_candidates`
 - Poll interval: `30s` (configurable with `DETECTION_POLL_SECONDS`)
 - Default rules:
-- `mvp_high_event_rate` (fallback surge detector)
-- `security_failed_login_burst` (keyword-based auth failure burst)
+  - `mvp_high_event_rate` (fallback surge detector)
+  - `security_failed_login_burst` (keyword-based auth failure burst)
+  - `windows_failed_logon_event_burst` (Windows EventID 4625 burst)
+  - `windows_account_lockout_detected` (Windows EventID 4740)
+  - `windows_service_install_detected` (Windows EventID 4697/7045)
+  - `windows_privileged_group_membership_change` (Windows EventID 4728/4732/4756)
 - Grafana alert route: detection candidates are routed via notification policy to `alert-sink` (router webhook)
 
 ## Rule schema (MVP)
@@ -26,6 +30,7 @@ severity: low|medium|high|critical
 enabled: true|false
 threshold_op: gt|gte|eq|lt|lte
 threshold_value: 50
+cooldown_seconds: 300
 query: |
   SELECT count()
   FROM security.events
@@ -36,6 +41,7 @@ query: |
 
 - `query` must return a single integer value.
 - If threshold condition matches, a row is inserted into `security.alert_candidates`.
+- `cooldown_seconds` is optional; when set, repeated triggers for the same rule are suppressed during cooldown.
 - This is detection-candidate generation only; routing/notification policy is separate work.
 
 ## Quick local test (failed login burst)
@@ -54,4 +60,19 @@ Then query candidates:
 ```bash
 curl -s http://localhost:8123 --data-binary \
   "SELECT ts, rule_id, severity, hits FROM security.alert_candidates WHERE rule_id = 'security_failed_login_burst' ORDER BY ts DESC LIMIT 10 FORMAT PrettyCompact"
+```
+
+## Quick local test (Windows EventID rules)
+
+Generate Windows security scenario events:
+
+```bash
+./scripts/generate-windows-security-scenarios.sh
+```
+
+Then query triggered Windows rules:
+
+```bash
+curl -s http://localhost:8123 --data-binary \
+  "SELECT ts, rule_id, severity, hits FROM security.alert_candidates WHERE rule_id LIKE 'windows_%' ORDER BY ts DESC LIMIT 20 FORMAT PrettyCompact"
 ```

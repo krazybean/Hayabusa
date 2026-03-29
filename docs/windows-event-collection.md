@@ -16,6 +16,7 @@ Windows Event Log (Application/System/Security)
 
 - Windows collector template: `configs/fluent-bit/windows/fluent-bit-windows.conf`
 - Windows collector mTLS template: `configs/fluent-bit/windows/fluent-bit-windows-mtls.conf`
+- Windows endpoint enrollment script: `scripts/enroll-windows-endpoint.sh`
 - Replace `HAYABUSA_VECTOR_HOST` with the reachable IP or hostname for the Hayabusa Vector service.
 - Windows endpoint validation script: `scripts/windows-endpoint-check.sh`
 - mTLS cert generation script: `scripts/generate-windows-forward-certs.sh`
@@ -30,9 +31,13 @@ Vector normalization writes:
 ## Deployment Notes
 
 1. Install Fluent Bit on the Windows endpoint.
-2. Copy the template config and set `Host` to your Hayabusa host.
-3. Start Fluent Bit as a Windows service.
-4. Validate in Hayabusa:
+2. Build an endpoint bundle on Hayabusa host:
+   - `./scripts/enroll-windows-endpoint.sh --endpoint-id WIN-ENDPOINT-01 --vector-host <hayabusa-host-ip>`
+3. Copy the bundle outputs to endpoint:
+   - `dist/windows-endpoints/WIN-ENDPOINT-01/fluent-bit.conf`
+   - `dist/windows-endpoints/WIN-ENDPOINT-01/certs/*`
+4. Start Fluent Bit as a Windows service.
+5. Validate in Hayabusa:
    - `docker compose logs -f vector`
    - `./scripts/windows-endpoint-check.sh`
 
@@ -47,19 +52,14 @@ This exercises the dedicated Windows lane (`24225`) using the local Fluent Bit c
 
 ## mTLS Hardening (Real Endpoint)
 
-1. Generate certs locally:
+1. Vector Windows lane mTLS is enabled by default in `configs/vector/vector.yaml`.
+2. Fluent Bit Windows lane mTLS output is enabled in local collector config.
+3. Generate/refresh cert authority and server certs if needed:
    - `./scripts/generate-windows-forward-certs.sh`
-2. Merge TLS settings from:
-   - `configs/vector/windows-forward-mtls-example.yaml`
-   into `sources.ingest_fluent_windows_forward` in `configs/vector/vector.yaml`
-3. Restart Vector:
-   - `DOCKER_CONFIG=/tmp/docker-nocreds docker compose up -d vector`
-4. On Windows endpoint, use:
-   - `configs/fluent-bit/windows/fluent-bit-windows-mtls.conf`
-5. Copy certs to endpoint:
-   - `ca.crt`, `client.crt`, `client.key`
-6. Tighten `permit_origin` in Vector to explicit endpoint CIDRs.
-7. Validate:
+4. Enroll endpoint with endpoint-specific client cert:
+   - `./scripts/enroll-windows-endpoint.sh --endpoint-id WIN-ENDPOINT-01 --vector-host <hayabusa-host-ip>`
+5. Tighten `permit_origin` in Vector to explicit endpoint CIDRs.
+6. Validate:
    - `./scripts/windows-endpoint-check.sh`
 
 ## Current Scope
@@ -68,6 +68,7 @@ This exercises the dedicated Windows lane (`24225`) using the local Fluent Bit c
 - Dedicated Windows ingress lane in Vector (`24225`) with source tagging: complete
 - Local simulator and validation script: complete
 - mTLS hardening toolkit (cert script + templates): complete
+- mTLS enabled in active stack path: complete
+- Endpoint enrollment/identity strategy (bundle + endpoint client cert): complete
 - Production hardening still pending:
-  - endpoint enrollment/identity strategy
   - policy rollout/update mechanism

@@ -1,5 +1,5 @@
-# Example only: merge these fields into `sources.ingest_fluent_windows_forward`
-# in configs/vector/vector.yaml when enabling mTLS for real Windows endpoints.
+# Reference example for `sources.ingest_fluent_windows_forward`.
+# Equivalent settings are enabled in configs/vector/vector.yaml.
 #
 # Requires generated certs mounted at:
 #   /etc/vector/tls/windows-forward

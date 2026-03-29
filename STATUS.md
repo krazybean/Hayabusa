@@ -1,6 +1,6 @@
 # Hayabusa Status
 
-Last updated: 2026-03-28 (America/Chicago)
+Last updated: 2026-03-29 (America/Chicago)
 
 ## Current Goal
 
@@ -17,17 +17,20 @@ Build toward Wazuh-comparable capability while keeping the local Docker MVP stab
 - Windows event collector path: strategy + template + validation script (`winevtlog -> forward -> Vector:24225`)
 - Windows lane local simulator: active (`./scripts/generate-windows-events.sh` -> `vector-windows-endpoint`)
 - Windows mTLS hardening toolkit: ready (`./scripts/generate-windows-forward-certs.sh` + mTLS templates)
+- Windows lane mTLS: enabled in active stack (`vector` source TLS + fluent-bit client cert output)
+- Windows endpoint enrollment: bundle script + endpoint-specific client certs (`./scripts/enroll-windows-endpoint.sh`)
 - Storage TTL: `7 days` on `security.events`
 - Storage budget guardrail: `1 GiB` target via `./scripts/storage-budget-guard.sh`
 - Grafana alerts: `Hayabusa Ingest Stalled`, `Hayabusa Events Storage Near Budget`, `Hayabusa Security Failed Login Burst`
 - Detection engine MVP: active (`detection` service writes `security.alert_candidates`)
-- Detection content: `security_failed_login_burst` enabled, `mvp_high_event_rate` retained as fallback
+- Detection content: baseline + Windows EventID pack enabled (`4625`, `4740`, `4697/7045`, `4728/4732/4756`)
+- Detection noise control: per-rule `cooldown_seconds` suppression active
 - Alert routing MVP: Grafana contact points + policy + dedupe to local `alert-sink` router webhook, with optional external forward auth token
 
 ## Component Progress
 
 - Foundation: complete for MVP
-- Collection: strong-mvp (Windows lane validated locally; mTLS toolkit ready)
+- Collection: strong-mvp (Windows lane validated locally; mTLS active; enrollment bundle flow added)
 - Ingestion/Normalization: partial
 - Transport (NATS in active path): MVP complete
 - Storage: solid baseline
@@ -37,8 +40,8 @@ Build toward Wazuh-comparable capability while keeping the local Docker MVP stab
 
 ## Next Priority Queue
 
-1. Windows endpoint real-host onboarding with mTLS enabled
-2. Detection content expansion (security-focused rules + correlation)
+1. First real Windows host deployment using endpoint enrollment bundle
+2. Detection correlation logic (multi-signal rules beyond single EventID thresholds)
 3. Alert delivery hardening (external destinations, retries, auth, secrets)
 4. Investigation query pack and saved workflows
 

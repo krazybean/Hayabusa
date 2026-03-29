@@ -112,6 +112,7 @@ services:
     volumes:
       - ./configs/fluent-bit/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro
       - ./data/host-logs:/var/log/hayabusa-host
+      - ./secrets/windows-forward-tls:/etc/fluent-bit/tls/windows-forward:ro
     depends_on:
       vector:
         condition: service_healthy

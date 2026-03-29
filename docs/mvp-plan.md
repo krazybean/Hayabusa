@@ -77,10 +77,19 @@ Deliver:
 - Windows collection runbook and endpoint validation script
 - Local simulator path for Windows lane verification
 - mTLS toolkit for Windows lane (cert generation + config templates)
+- Active stack mTLS enablement for Windows lane
+- Endpoint enrollment bundle flow with endpoint-specific client certificates
+
+## Phase 10: Windows detection content expansion (completed)
+
+Deliver:
+- Windows EventID-focused detection rules (failed logon, lockout, service install, privileged group changes)
+- Windows security scenario generator for local validation
+- Rule cooldown suppression support to reduce repeated candidate spam
 
 ## Next focus
 
 - Define canonical normalized schema versioning strategy
 - Harden alert delivery (external destinations, auth, retries, secret management)
 - Add first saved query pack for investigation workflows
-- Windows endpoint real-host onboarding with mTLS enabled
+- First real Windows host deployment and enrollment lifecycle automation

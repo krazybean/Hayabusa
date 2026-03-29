@@ -1,0 +1,14 @@
+id: windows_service_install_detected
+name: Windows Service Install Detected
+description: Detect service installation-related Windows events (4697/7045).
+severity: high
+enabled: true
+threshold_op: gte
+threshold_value: 1
+cooldown_seconds: 900
+query: |
+  SELECT count()
+  FROM security.events
+  WHERE ts > now() - INTERVAL 15 MINUTE
+    AND ingest_source = 'vector-windows-endpoint'
+    AND fields['event_id'] IN ('4697', '7045')

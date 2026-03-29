@@ -13,6 +13,8 @@ fi
 
 rm -rf "${OUT_DIR}"
 mkdir -p "${OUT_DIR}"
+# Keep placeholder for repo-tracked secrets directory.
+: > "${OUT_DIR}/.gitkeep"
 
 tmpdir="$(mktemp -d)"
 cleanup() {
