@@ -197,12 +197,23 @@ flowchart LR
     A2[Storage Budget Rule] --> G
     A3[Failed Login Burst Rule] --> G
 
-    G -->|default route<br/>group_by: service,severity| R1[hayabusa-default-webhook]
-    G -->|detection route<br/>match service=detection<br/>group_by: rule_id,severity| R2[hayabusa-detection-webhook]
+    G -->|root receiver| R1[hayabusa-platform-fanout]
+    G -->|severity=high/critical| R2[hayabusa-oncall-webhook]
+    G -->|service=detection| R3[hayabusa-detection-fanout]
 
-    R1 --> Sink[alert-sink Router]
-    R2 --> Sink
-    Sink -. optional bearer-token forward .-> Ext[External Webhook]
+    R1 --> P1[/alerts/default/]
+    R1 --> P2[/alerts/email/]
+    R3 --> P3[/alerts/detection/]
+    R3 --> P4[/alerts/chat/]
+    R2 --> P5[/alerts/oncall/]
+
+    P1 --> Sink[alert-sink Router]
+    P2 --> Sink
+    P3 --> Sink
+    P4 --> Sink
+    P5 --> Sink
+
+    Sink -. route-aware optional forward .-> Ext[External Webhooks]
 ```
 
 Configure optional external webhook forwarding (local `.env`, not committed):
@@ -212,6 +223,14 @@ HAYABUSA_EXTERNAL_WEBHOOK_URL=https://example-alert-endpoint.local/webhook
 HAYABUSA_EXTERNAL_WEBHOOK_TOKEN=replace_me
 # Optional:
 # HAYABUSA_EXTERNAL_WEBHOOK_TOKEN_FILE=/run/secrets/hayabusa_external_webhook_token
+# Optional route-specific destinations (override global fallback):
+# HAYABUSA_EXTERNAL_WEBHOOK_EMAIL_URL=https://example.local/email-webhook
+# HAYABUSA_EXTERNAL_WEBHOOK_CHAT_URL=https://example.local/chat-webhook
+# HAYABUSA_EXTERNAL_WEBHOOK_ONCALL_URL=https://example.local/oncall-webhook
+# HAYABUSA_EXTERNAL_WEBHOOK_DETECTION_URL=https://example.local/detection-webhook
+# Optional route-specific tokens/files:
+# HAYABUSA_EXTERNAL_WEBHOOK_CHAT_TOKEN=replace_me
+# HAYABUSA_EXTERNAL_WEBHOOK_ONCALL_TOKEN_FILE=/run/secrets/oncall_token
 # Retry/timeout hardening defaults:
 # HAYABUSA_ALERT_ROUTER_FORWARD_TIMEOUT_MS=5000
 # HAYABUSA_ALERT_ROUTER_FORWARD_RETRY_MAX_ATTEMPTS=3
@@ -222,7 +241,7 @@ HAYABUSA_EXTERNAL_WEBHOOK_TOKEN=replace_me
 Send synthetic failed-login events (to validate `security_failed_login_burst`):
 
 ```bash
-for i in 1 2 3 4; do
+for i in 1 2 3 4 5 6; do
   printf '<134>1 2026-03-28T00:00:00Z authhost sshd 100%d ID47 - Failed password for invalid user root from 10.0.0.%d port 22 ssh2\n' "$i" "$i" \
     | nc -u -w1 127.0.0.1 1514
 done
@@ -278,7 +297,7 @@ Real-host cutover validation (endpoint-specific + CIDR hardening):
 Trigger Windows EventID detection scenarios:
 
 ```bash
-./scripts/generate-windows-security-scenarios.sh
+WINDOWS_EVENT_COMPUTER=WIN-TEST-01 ./scripts/generate-windows-security-scenarios.sh
 curl -s http://localhost:8123 --data-binary \
   "SELECT ts, rule_id, severity, hits FROM security.alert_candidates WHERE rule_id LIKE 'windows_%' ORDER BY ts DESC LIMIT 20 FORMAT PrettyCompact"
 ```

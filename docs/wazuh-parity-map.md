@@ -9,7 +9,7 @@ Current status is local MVP foundation, not full feature parity yet.
 - Storage and search baseline: **partial-strong**
 - Dashboards and visibility baseline: **partial**
 - Detection rules engine: **partial-strong**
-- Alert routing and notifications: **partial**
+- Alert routing and notifications: **partial-strong**
 - Endpoint management/agents: **early**
 - Investigation workflow tooling: **partial**
 - Compliance/reporting workflows: **not started**
@@ -49,13 +49,14 @@ Current status is local MVP foundation, not full feature parity yet.
 - Grafana correlation alert rules for Windows multi-signal detections
 - Alert routing MVP with dedupe policy via Grafana contact points (local router + optional external forwarding with auth token support)
 - Alert router external forwarding hardening (timeout + retry/backoff controls)
+- Alert destination fan-out lanes (platform/email, detection/chat, on-call severity routing)
 
 ## Major gaps vs Wazuh-style capabilities
 
 - Endpoint security agents and central policy management
 - Built-in detection library and correlation engine
 - Case management / investigation workflow tooling
-- Notification fan-out strategy (email/webhook/chat/on-call)
+- Native destination integrations (email SMTP/chat/on-call providers) beyond webhook adapters
 - Asset, identity, and threat-intel enrichment pipelines
 - Compliance packs and reporting templates
 - Detection correlation and built-in content depth comparable to Wazuh rulesets
@@ -63,6 +64,6 @@ Current status is local MVP foundation, not full feature parity yet.
 ## Next parity-focused milestones
 
 1. First real Windows host deployment using enrollment bundle (replace simulator-driven validation)
-2. Detection tuning wave 2 (threshold calibration + curated suppression lists toward Wazuh depth)
+2. Canonical schema + versioning model for stable long-term content packs
 3. Investigation workflow acceleration (case linkage + analyst workflow automation)
-4. Alert destination fan-out (email/chat/on-call) + endpoint/agent management model for Wazuh-comparable host visibility
+4. Endpoint/agent management model for Wazuh-comparable host visibility

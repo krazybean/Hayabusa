@@ -28,8 +28,10 @@ Build toward Wazuh-comparable capability while keeping the local Docker MVP stab
 - Detection correlation: Windows multi-signal rule pack active (`4625->4740`, `4625->4697/7045`, `4625->4728/4732/4756`, `4740->4697/7045`)
 - Detection noise control: per-rule `cooldown_seconds` suppression active
 - Detection scoped suppressions: host/user suppression controls active (`suppression_*` + `{{SUPPRESSION_CONDITION}}`)
+- Detection tuning wave 2 baseline: threshold recalibration + curated simulator suppression list (`win-local-sim`) in Windows-focused rules
 - Alert routing MVP: Grafana contact points + policy + dedupe to local `alert-sink` router webhook, with optional external forward auth token
 - Alert router hardening: external webhook timeout + retry/backoff controls (`HAYABUSA_ALERT_ROUTER_FORWARD_*`)
+- Alert destination fan-out: platform/email + detection/chat + on-call path routing with route-specific external webhook overrides
 - Investigation query pack: starter SQL hunts added (`docs/investigation-query-pack.md`)
 - Investigation dashboard: provisioned (`Hayabusa Investigations`)
 - Investigation playbooks: documented and mapped to dashboard pivots (`docs/investigation-playbooks.md`)
@@ -42,15 +44,15 @@ Build toward Wazuh-comparable capability while keeping the local Docker MVP stab
 - Transport (NATS in active path): MVP complete
 - Storage: solid baseline
 - Detection engine: MVP complete
-- Alert routing/policy: MVP complete (local webhook + optional external forward)
+- Alert routing/policy: partial-strong (fan-out paths + retry hardening)
 - Investigation workflow: partial
 
 ## Next Priority Queue
 
 1. First real Windows host deployment using endpoint enrollment bundle
-2. Detection tuning wave 2 (threshold calibration + suppression-list curation)
-3. Alert destination expansion (email/chat/on-call fan-out targets)
-4. Endpoint/agent management model for Wazuh-comparable host visibility
+2. Canonical schema + schema versioning strategy
+3. Endpoint/agent management model for Wazuh-comparable host visibility
+4. Compliance/reporting starter pack
 
 ## Session Rebuild Fast Path
 

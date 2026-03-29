@@ -4,7 +4,8 @@ description: Detect repeated authentication failures from syslog-like messages.
 severity: medium
 enabled: true
 threshold_op: gte
-threshold_value: 3
+threshold_value: 5
+cooldown_seconds: 300
 query: |
   SELECT count()
   FROM security.events

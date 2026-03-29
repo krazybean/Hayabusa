@@ -47,6 +47,7 @@
 - [x] notification routing policy and contact points (webhook MVP + dedupe)
 - [x] detection-engine-backed alert candidate generation
 - [x] alert router retry/backoff + timeout controls for external forwarding
+- [x] destination fan-out lanes (platform/email, detection/chat, on-call severity route)
 
 ## Detection
 - [x] detection service container in compose
@@ -56,6 +57,7 @@
 - [x] multi-signal Windows correlation rule pack
 - [x] per-rule cooldown suppression (`cooldown_seconds`)
 - [x] host/user scoped suppression controls (`suppression_*` + `{{SUPPRESSION_CONDITION}}`)
+- [x] detection tuning wave 2 baseline (threshold recalibration + simulator suppression curation)
 - [x] alert candidate table (`security.alert_candidates`)
 - [x] alert routing and notifications (local router + optional external forwarding)
 

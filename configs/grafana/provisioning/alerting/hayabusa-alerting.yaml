@@ -427,7 +427,7 @@ groups:
 
 contactPoints:
   - orgId: 1
-    name: hayabusa-default-webhook
+    name: hayabusa-platform-fanout
     receivers:
       - uid: hayabusa-default-webhook
         type: webhook
@@ -436,9 +436,16 @@ contactPoints:
           httpMethod: POST
           maxAlerts: 0
         disableResolveMessage: false
+      - uid: hayabusa-email-webhook
+        type: webhook
+        settings:
+          url: http://alert-sink:8080/alerts/email
+          httpMethod: POST
+          maxAlerts: 0
+        disableResolveMessage: false
 
   - orgId: 1
-    name: hayabusa-detection-webhook
+    name: hayabusa-detection-fanout
     receivers:
       - uid: hayabusa-detection-webhook
         type: webhook
@@ -447,10 +454,28 @@ contactPoints:
           httpMethod: POST
           maxAlerts: 0
         disableResolveMessage: false
+      - uid: hayabusa-chat-webhook
+        type: webhook
+        settings:
+          url: http://alert-sink:8080/alerts/chat
+          httpMethod: POST
+          maxAlerts: 0
+        disableResolveMessage: false
+
+  - orgId: 1
+    name: hayabusa-oncall-webhook
+    receivers:
+      - uid: hayabusa-oncall-webhook
+        type: webhook
+        settings:
+          url: http://alert-sink:8080/alerts/oncall
+          httpMethod: POST
+          maxAlerts: 0
+        disableResolveMessage: false
 
 policies:
   - orgId: 1
-    receiver: hayabusa-default-webhook
+    receiver: hayabusa-platform-fanout
     group_by:
       - service
       - severity
@@ -458,7 +483,19 @@ policies:
     group_interval: 5m
     repeat_interval: 4h
     routes:
-      - receiver: hayabusa-detection-webhook
+      - receiver: hayabusa-oncall-webhook
+        object_matchers:
+          - - severity
+            - =~
+            - high|critical
+        group_by:
+          - service
+          - rule_id
+          - severity
+        group_wait: 10s
+        group_interval: 2m
+        repeat_interval: 15m
+      - receiver: hayabusa-detection-fanout
         object_matchers:
           - - service
             - =

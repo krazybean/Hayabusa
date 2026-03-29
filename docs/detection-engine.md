@@ -56,6 +56,7 @@ query: |
 - `suppression_computers_csv` and `suppression_users_csv` are optional comma-separated allow-noise lists (case-insensitive).
 - To apply suppression filters, include `{{SUPPRESSION_CONDITION}}` in the rule SQL (typically in the `WHERE` clause).
 - `suppression_computer_expr` / `suppression_user_expr` are optional advanced overrides for rules using table aliases (for example `lock.fields['computer']`).
+- Current baseline tuning suppresses simulator host `win-local-sim` in Windows-focused rules to reduce local noise.
 - This is detection-candidate generation only; routing/notification policy is separate work.
 
 ## Quick local test (failed login burst)
@@ -63,7 +64,7 @@ query: |
 Send synthetic failed-login syslog lines:
 
 ```bash
-for i in 1 2 3 4; do
+for i in 1 2 3 4 5 6; do
   printf '<134>1 2026-03-28T00:00:00Z authhost sshd 100%d ID47 - Failed password for invalid user root from 10.0.0.%d port 22 ssh2\n' "$i" "$i" \
     | nc -u -w1 127.0.0.1 1514
 done
@@ -81,7 +82,7 @@ curl -s http://localhost:8123 --data-binary \
 Generate Windows security scenario events:
 
 ```bash
-./scripts/generate-windows-security-scenarios.sh
+WINDOWS_EVENT_COMPUTER=WIN-TEST-01 ./scripts/generate-windows-security-scenarios.sh
 ```
 
 Then query triggered Windows rules:

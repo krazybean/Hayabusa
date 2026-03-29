@@ -4,8 +4,9 @@ description: Detect repeated Windows failed logon EventID 4625 activity from end
 severity: high
 enabled: true
 threshold_op: gte
-threshold_value: 3
-cooldown_seconds: 300
+threshold_value: 5
+cooldown_seconds: 600
+suppression_computers_csv: win-local-sim
 query: |
   SELECT count()
   FROM security.events
