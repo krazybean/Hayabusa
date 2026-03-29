@@ -20,6 +20,7 @@ Build toward Wazuh-comparable capability while keeping the local Docker MVP stab
 - Windows lane mTLS: enabled in active stack (`vector` source TLS + fluent-bit client cert output)
 - Windows endpoint enrollment: bundle script + endpoint-specific client certs (`./scripts/enroll-windows-endpoint.sh`)
 - Windows real-host cutover guard: endpoint-specific validation + CIDR hardening check (`./scripts/windows-real-host-cutover-check.sh`)
+- Windows cutover orchestrator: one-command workflow (`./scripts/windows-cutover-orchestrator.sh`)
 - Storage TTL: `7 days` on `security.events`
 - Storage budget guardrail: `1 GiB` target via `./scripts/storage-budget-guard.sh`
 - Grafana alerts: ingest stall + storage budget + failed-login burst + Windows correlation rule alerts

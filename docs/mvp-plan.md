@@ -108,6 +108,6 @@ Deliver:
 ## Next focus
 
 - Define canonical normalized schema versioning strategy
-- First real Windows host deployment and enrollment lifecycle automation
+- First real Windows host deployment using existing cutover orchestrator workflow
 - Endpoint/agent management model for broader host coverage
 - Compliance/reporting starter pack

@@ -271,6 +271,7 @@ Use the template at `configs/fluent-bit/windows/fluent-bit-windows.conf` on Wind
 - `docs/windows-event-collection.md`
 - `./scripts/windows-endpoint-check.sh`
 - `./scripts/windows-real-host-cutover-check.sh`
+- `./scripts/windows-cutover-orchestrator.sh`
 
 mTLS hardening prep:
 
@@ -292,6 +293,16 @@ Real-host cutover validation (endpoint-specific + CIDR hardening):
 
 ```bash
 ./scripts/windows-real-host-cutover-check.sh --computer WIN-ENDPOINT-01 --expected-cidr 192.168.10.22/32
+```
+
+One-command real-host cutover orchestration:
+
+```bash
+./scripts/windows-cutover-orchestrator.sh \
+  --endpoint-id WIN-ENDPOINT-01 \
+  --vector-host 192.168.1.50 \
+  --expected-cidr 192.168.10.22/32 \
+  --computer WIN-ENDPOINT-01
 ```
 
 Trigger Windows EventID detection scenarios:

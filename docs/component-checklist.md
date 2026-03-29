@@ -14,6 +14,7 @@
 - [x] Windows lane mTLS enabled in active stack
 - [x] Windows endpoint enrollment bundle + cert workflow
 - [x] Windows real-host cutover guard script (CIDR + endpoint-specific validation)
+- [x] Windows first-host cutover orchestrator script (enroll + CIDR hardening + validation)
 - [x] syslog input plan
 - [x] test generator plan
 

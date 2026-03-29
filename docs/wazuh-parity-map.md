@@ -24,6 +24,7 @@ Current status is local MVP foundation, not full feature parity yet.
 - Windows lane mTLS enabled in active stack path (Vector source + Fluent Bit client auth)
 - Windows endpoint enrollment bundle workflow with endpoint-specific client cert generation
 - Windows real-host cutover guard script (`windows-real-host-cutover-check.sh`) for endpoint-specific validation and CIDR hardening checks
+- Windows one-command cutover orchestrator (`windows-cutover-orchestrator.sh`) for enroll + hardening + validation workflow
 - Normalized events stored in ClickHouse (`security.events`)
 - External syslog ingestion over TCP/UDP (`1514`)
 - Provisioned Grafana dashboard for event visibility

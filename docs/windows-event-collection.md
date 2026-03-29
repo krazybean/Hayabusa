@@ -21,6 +21,7 @@ Windows Event Log (Application/System/Security)
 - Windows endpoint validation script: `scripts/windows-endpoint-check.sh`
 - Windows real-host cutover guard script: `scripts/windows-real-host-cutover-check.sh`
 - Windows permit-origin helper script: `scripts/set-windows-permit-origin.sh`
+- Windows one-command cutover orchestrator: `scripts/windows-cutover-orchestrator.sh`
 - mTLS cert generation script: `scripts/generate-windows-forward-certs.sh`
 
 ## Field Expectations in Hayabusa
@@ -65,6 +66,26 @@ This exercises the dedicated Windows lane (`24225`) using the local Fluent Bit c
    - `./scripts/windows-endpoint-check.sh`
 
 ## Real-Host Cutover Checklist
+
+Preferred one-command path:
+
+```bash
+./scripts/windows-cutover-orchestrator.sh \
+  --endpoint-id WIN-ENDPOINT-01 \
+  --vector-host 192.168.1.50 \
+  --expected-cidr 192.168.10.22/32 \
+  --computer WIN-ENDPOINT-01
+```
+
+This runs:
+- enrollment bundle generation
+- `permit_origin` update
+- Vector restart
+- endpoint + CIDR hardening validation
+
+Use `--dry-run` first to preview all steps without changing files/services.
+
+Manual path:
 
 1. Enroll endpoint bundle:
    - `./scripts/enroll-windows-endpoint.sh --endpoint-id WIN-ENDPOINT-01 --vector-host <hayabusa-host-ip>`
