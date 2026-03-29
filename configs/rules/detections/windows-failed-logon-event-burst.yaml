@@ -12,3 +12,4 @@ query: |
   WHERE ts > now() - INTERVAL 5 MINUTE
     AND ingest_source = 'vector-windows-endpoint'
     AND fields['event_id'] = '4625'
+    AND {{SUPPRESSION_CONDITION}}

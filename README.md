@@ -54,6 +54,7 @@ Active ingest path is now `Vector -> NATS JetStream -> ClickHouse`, with ClickHo
 - ClickHouse database/table ingest path is configured through JetStream
 - Prometheus scraping and Grafana datasource provisioning are in place
 - SQL-first detection engine MVP writes triggered candidates to `security.alert_candidates`
+- Detection tuning controls include per-rule cooldown and host/user scoped suppressions (`suppression_*` + `{{SUPPRESSION_CONDITION}}`)
 - JetStream stream bootstrap is automated (`HAYABUSA_EVENTS` + `VECTOR_CLICKHOUSE_WRITER`)
 - Fluent Bit host collector baseline is active (`forward -> Vector:24224`)
 - Windows event collector template is defined (`winevtlog -> forward -> Vector:24225`)

@@ -55,6 +55,7 @@
 - [x] Windows EventID-focused rule pack (auth, lockout, service install, privileged group)
 - [x] multi-signal Windows correlation rule pack
 - [x] per-rule cooldown suppression (`cooldown_seconds`)
+- [x] host/user scoped suppression controls (`suppression_*` + `{{SUPPRESSION_CONDITION}}`)
 - [x] alert candidate table (`security.alert_candidates`)
 - [x] alert routing and notifications (local router + optional external forwarding)
 

@@ -6,6 +6,7 @@ enabled: true
 threshold_op: gte
 threshold_value: 1
 cooldown_seconds: 900
+suppression_computer_expr: lowerUTF8(ifNull(grp.fields['computer'], ''))
 query: |
   SELECT count()
   FROM (
@@ -21,5 +22,6 @@ query: |
       AND grp.ingest_source = 'vector-windows-endpoint'
       AND grp.fields['event_id'] IN ('4728', '4732', '4756')
       AND grp.fields['computer'] != ''
+      AND {{SUPPRESSION_CONDITION}}
     GROUP BY computer
   )

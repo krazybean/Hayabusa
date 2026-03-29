@@ -35,10 +35,17 @@ enabled: true|false
 threshold_op: gt|gte|eq|lt|lte
 threshold_value: 50
 cooldown_seconds: 300
+# Optional comma-separated suppression scopes:
+suppression_computers_csv: "win-lab-01,win-lab-02"
+suppression_users_csv: "svc_backup,svc_scanner"
+# Optional expressions (advanced; useful for correlation aliases):
+suppression_computer_expr: "lowerUTF8(ifNull(lock.fields['computer'], ''))"
+suppression_user_expr: "lowerUTF8(ifNull(lock.fields['subject_user_name'], ''))"
 query: |
   SELECT count()
   FROM security.events
   WHERE ts > now() - INTERVAL 1 MINUTE
+    AND {{SUPPRESSION_CONDITION}}
 ```
 
 ## Notes
@@ -46,6 +53,9 @@ query: |
 - `query` must return a single integer value.
 - If threshold condition matches, a row is inserted into `security.alert_candidates`.
 - `cooldown_seconds` is optional; when set, repeated triggers for the same rule are suppressed during cooldown.
+- `suppression_computers_csv` and `suppression_users_csv` are optional comma-separated allow-noise lists (case-insensitive).
+- To apply suppression filters, include `{{SUPPRESSION_CONDITION}}` in the rule SQL (typically in the `WHERE` clause).
+- `suppression_computer_expr` / `suppression_user_expr` are optional advanced overrides for rules using table aliases (for example `lock.fields['computer']`).
 - This is detection-candidate generation only; routing/notification policy is separate work.
 
 ## Quick local test (failed login burst)

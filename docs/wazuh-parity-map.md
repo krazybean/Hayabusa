@@ -41,6 +41,7 @@ Current status is local MVP foundation, not full feature parity yet.
   - `windows_service_install_detected` (4697/7045)
   - `windows_privileged_group_membership_change` (4728/4732/4756)
 - Detection cooldown controls (`cooldown_seconds`) to reduce repeat-trigger noise
+- Detection host/user suppression controls (`suppression_*` + query placeholder integration)
 - Investigation query pack with starter SQL hunts (`docs/investigation-query-pack.md`)
 - Grafana investigation dashboard (`Hayabusa Investigations`) for one-click pivot queries
 - Investigation playbooks mapped to current dashboard/query pivots (`docs/investigation-playbooks.md`)
@@ -62,6 +63,6 @@ Current status is local MVP foundation, not full feature parity yet.
 ## Next parity-focused milestones
 
 1. First real Windows host deployment using enrollment bundle (replace simulator-driven validation)
-2. Detection tuning/suppressions expansion (broader content quality toward Wazuh depth)
+2. Detection tuning wave 2 (threshold calibration + curated suppression lists toward Wazuh depth)
 3. Investigation workflow acceleration (case linkage + analyst workflow automation)
 4. Alert destination fan-out (email/chat/on-call) + endpoint/agent management model for Wazuh-comparable host visibility

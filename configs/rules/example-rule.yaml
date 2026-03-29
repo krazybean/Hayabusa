@@ -5,7 +5,14 @@ severity: medium
 enabled: false
 threshold_op: gte
 threshold_value: 10
+# Optional suppression lists (comma-separated, case-insensitive):
+# suppression_computers_csv: "win-lab-01,win-lab-02"
+# suppression_users_csv: "svc_backup,svc_scanner"
+# Optional override expressions for correlation rules/aliases:
+# suppression_computer_expr: "lowerUTF8(ifNull(lock.fields['computer'], ''))"
+# suppression_user_expr: "lowerUTF8(ifNull(lock.fields['subject_user_name'], ''))"
 query: |
   SELECT count()
   FROM security.events
   WHERE ts > now() - INTERVAL 5 MINUTE
+    AND {{SUPPRESSION_CONDITION}}

@@ -27,6 +27,7 @@ Build toward Wazuh-comparable capability while keeping the local Docker MVP stab
 - Detection content: baseline + Windows EventID pack enabled (`4625`, `4740`, `4697/7045`, `4728/4732/4756`)
 - Detection correlation: Windows multi-signal rule pack active (`4625->4740`, `4625->4697/7045`, `4625->4728/4732/4756`, `4740->4697/7045`)
 - Detection noise control: per-rule `cooldown_seconds` suppression active
+- Detection scoped suppressions: host/user suppression controls active (`suppression_*` + `{{SUPPRESSION_CONDITION}}`)
 - Alert routing MVP: Grafana contact points + policy + dedupe to local `alert-sink` router webhook, with optional external forward auth token
 - Alert router hardening: external webhook timeout + retry/backoff controls (`HAYABUSA_ALERT_ROUTER_FORWARD_*`)
 - Investigation query pack: starter SQL hunts added (`docs/investigation-query-pack.md`)
@@ -47,7 +48,7 @@ Build toward Wazuh-comparable capability while keeping the local Docker MVP stab
 ## Next Priority Queue
 
 1. First real Windows host deployment using endpoint enrollment bundle
-2. Detection tuning (false-positive controls, host/user-level suppressions)
+2. Detection tuning wave 2 (threshold calibration + suppression-list curation)
 3. Alert destination expansion (email/chat/on-call fan-out targets)
 4. Endpoint/agent management model for Wazuh-comparable host visibility
 

@@ -12,7 +12,14 @@ log() {
 
 query_clickhouse() {
   sql="$1"
-  curl -fsS "${CLICKHOUSE_URL}" --data-binary "${sql}"
+  if output="$(curl -fsS "${CLICKHOUSE_URL}" --data-binary "${sql}")"; then
+    printf '%s' "${output}"
+    return 0
+  fi
+
+  compact_sql="$(printf '%s' "${sql}" | tr '\n' ' ' | sed -E 's/[[:space:]]+/ /g')"
+  log "ClickHouse query failed. sql=${compact_sql}"
+  return 1
 }
 
 yaml_value() {
@@ -49,6 +56,75 @@ escape_sql_string() {
 
 is_integer() {
   echo "$1" | grep -Eq '^[0-9]+$'
+}
+
+normalize_csv_list() {
+  value="$1"
+  printf '%s' "${value}" \
+    | tr ',' '\n' \
+    | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//' \
+    | tr '[:upper:]' '[:lower:]' \
+    | sed '/^$/d' \
+    | awk '!seen[$0]++'
+}
+
+to_sql_string_list() {
+  lines="$1"
+  out=""
+  while IFS= read -r item; do
+    [ -n "${item}" ] || continue
+    escaped_item="$(escape_sql_string "${item}")"
+    if [ -n "${out}" ]; then
+      out="${out}, "
+    fi
+    out="${out}'${escaped_item}'"
+  done <<EOF
+${lines}
+EOF
+  printf '%s' "${out}"
+}
+
+build_suppression_condition() {
+  computers_csv="$1"
+  users_csv="$2"
+  computer_expr="$3"
+  user_expr="$4"
+
+  condition=""
+  normalized_computers="$(normalize_csv_list "${computers_csv}")"
+  normalized_users="$(normalize_csv_list "${users_csv}")"
+
+  if [ -n "${normalized_computers}" ]; then
+    computer_values="$(to_sql_string_list "${normalized_computers}")"
+    if [ -n "${computer_values}" ]; then
+      condition="${computer_expr} NOT IN (${computer_values})"
+    fi
+  fi
+
+  if [ -n "${normalized_users}" ]; then
+    user_values="$(to_sql_string_list "${normalized_users}")"
+    if [ -n "${user_values}" ]; then
+      user_condition="${user_expr} NOT IN (${user_values})"
+      if [ -n "${condition}" ]; then
+        condition="${condition} AND ${user_condition}"
+      else
+        condition="${user_condition}"
+      fi
+    fi
+  fi
+
+  if [ -z "${condition}" ]; then
+    condition="1 = 1"
+  fi
+
+  printf '%s' "${condition}"
+}
+
+apply_suppression_condition() {
+  query="$1"
+  condition="$2"
+  escaped_condition="$(printf '%s' "${condition}" | sed -e 's/[\/&]/\\&/g')"
+  printf '%s' "${query}" | sed "s/{{SUPPRESSION_CONDITION}}/${escaped_condition}/g"
 }
 
 rule_recently_triggered() {
@@ -121,6 +197,10 @@ run_rule() {
   threshold_op="$(yaml_value "${rule_file}" "threshold_op")"
   threshold_value="$(yaml_value "${rule_file}" "threshold_value")"
   cooldown_seconds="$(yaml_value "${rule_file}" "cooldown_seconds")"
+  suppression_computers_csv="$(yaml_value "${rule_file}" "suppression_computers_csv")"
+  suppression_users_csv="$(yaml_value "${rule_file}" "suppression_users_csv")"
+  suppression_computer_expr="$(yaml_value "${rule_file}" "suppression_computer_expr")"
+  suppression_user_expr="$(yaml_value "${rule_file}" "suppression_user_expr")"
   query_block="$(yaml_query_block "${rule_file}")"
 
   [ -n "${rule_id}" ] || { log "Skipping ${rule_file}: missing id"; return 0; }
@@ -130,6 +210,8 @@ run_rule() {
   [ -n "${threshold_op}" ] || threshold_op="gte"
   [ -n "${threshold_value}" ] || threshold_value="1"
   [ -n "${cooldown_seconds}" ] || cooldown_seconds="0"
+  [ -n "${suppression_computer_expr}" ] || suppression_computer_expr="lowerUTF8(ifNull(fields['computer'], ifNull(fields['hostname'], '')))"
+  [ -n "${suppression_user_expr}" ] || suppression_user_expr="lowerUTF8(ifNull(fields['user'], ifNull(fields['username'], ifNull(fields['subject_user_name'], ifNull(fields['target_user_name'], '')))))"
 
   if [ "${enabled}" != "true" ]; then
     return 0
@@ -151,6 +233,13 @@ run_rule() {
   fi
 
   exec_query="$(normalize_query_for_exec "${query_block}")"
+  suppression_condition="$(build_suppression_condition "${suppression_computers_csv}" "${suppression_users_csv}" "${suppression_computer_expr}" "${suppression_user_expr}")"
+
+  if ( [ -n "${suppression_computers_csv}" ] || [ -n "${suppression_users_csv}" ] ) && ! printf '%s' "${exec_query}" | grep -q "{{SUPPRESSION_CONDITION}}"; then
+    log "Rule ${rule_id} defines suppression_* values but query has no {{SUPPRESSION_CONDITION}} placeholder; suppressions will not apply."
+  fi
+
+  exec_query="$(apply_suppression_condition "${exec_query}" "${suppression_condition}")"
   hits_raw="$(query_clickhouse "${exec_query} FORMAT TabSeparated" | head -n1 | tr -d '\r' | awk '{print $1}')"
 
   if ! is_integer "${hits_raw}"; then

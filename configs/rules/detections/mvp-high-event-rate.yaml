@@ -9,3 +9,4 @@ query: |
   SELECT count()
   FROM security.events
   WHERE ts > now() - INTERVAL 1 MINUTE
+    AND {{SUPPRESSION_CONDITION}}
