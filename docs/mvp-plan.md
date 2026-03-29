@@ -109,5 +109,5 @@ Deliver:
 
 - Define canonical normalized schema versioning strategy
 - Expand alert delivery destinations (email/chat/on-call fan-out) on top of current retry/auth hardening
-- Add investigation playbooks and analyst response runbooks
+- Tune detections with host/user suppression controls and threshold refinement
 - First real Windows host deployment and enrollment lifecycle automation

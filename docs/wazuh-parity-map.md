@@ -43,6 +43,7 @@ Current status is local MVP foundation, not full feature parity yet.
 - Detection cooldown controls (`cooldown_seconds`) to reduce repeat-trigger noise
 - Investigation query pack with starter SQL hunts (`docs/investigation-query-pack.md`)
 - Grafana investigation dashboard (`Hayabusa Investigations`) for one-click pivot queries
+- Investigation playbooks mapped to current dashboard/query pivots (`docs/investigation-playbooks.md`)
 - Detection-candidate-driven Grafana alert (`Hayabusa Security Failed Login Burst`)
 - Grafana correlation alert rules for Windows multi-signal detections
 - Alert routing MVP with dedupe policy via Grafana contact points (local router + optional external forwarding with auth token support)
@@ -62,5 +63,5 @@ Current status is local MVP foundation, not full feature parity yet.
 
 1. First real Windows host deployment using enrollment bundle (replace simulator-driven validation)
 2. Detection tuning/suppressions expansion (broader content quality toward Wazuh depth)
-3. Investigation workflow acceleration (case linkage + analyst playbooks)
+3. Investigation workflow acceleration (case linkage + analyst workflow automation)
 4. Alert destination fan-out (email/chat/on-call) + endpoint/agent management model for Wazuh-comparable host visibility

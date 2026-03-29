@@ -2,6 +2,7 @@
 
 SQL-first starter hunts for local MVP triage against ClickHouse.
 Most of these are also provisioned in Grafana dashboard `Hayabusa Investigations`.
+For step-by-step analyst flow, pair with `docs/investigation-playbooks.md`.
 
 Run queries with:
 

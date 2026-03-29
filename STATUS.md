@@ -31,6 +31,7 @@ Build toward Wazuh-comparable capability while keeping the local Docker MVP stab
 - Alert router hardening: external webhook timeout + retry/backoff controls (`HAYABUSA_ALERT_ROUTER_FORWARD_*`)
 - Investigation query pack: starter SQL hunts added (`docs/investigation-query-pack.md`)
 - Investigation dashboard: provisioned (`Hayabusa Investigations`)
+- Investigation playbooks: documented and mapped to dashboard pivots (`docs/investigation-playbooks.md`)
 
 ## Component Progress
 
@@ -41,14 +42,14 @@ Build toward Wazuh-comparable capability while keeping the local Docker MVP stab
 - Storage: solid baseline
 - Detection engine: MVP complete
 - Alert routing/policy: MVP complete (local webhook + optional external forward)
-- Investigation workflow: early
+- Investigation workflow: partial
 
 ## Next Priority Queue
 
 1. First real Windows host deployment using endpoint enrollment bundle
-2. Investigation workflow playbooks tied to dashboard pivots
-3. Detection tuning (false-positive controls, host/user-level suppressions)
-4. Alert destination expansion (email/chat/on-call fan-out targets)
+2. Detection tuning (false-positive controls, host/user-level suppressions)
+3. Alert destination expansion (email/chat/on-call fan-out targets)
+4. Endpoint/agent management model for Wazuh-comparable host visibility
 
 ## Session Rebuild Fast Path
 

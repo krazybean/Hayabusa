@@ -58,6 +58,10 @@
 - [x] alert candidate table (`security.alert_candidates`)
 - [x] alert routing and notifications (local router + optional external forwarding)
 
+## Investigation Workflow
+- [x] investigation query pack (`docs/investigation-query-pack.md`)
+- [x] investigation playbooks mapped to dashboard pivots (`docs/investigation-playbooks.md`)
+
 ## Delivery Hygiene
 - [x] STATUS.md baseline established
 - [x] feature wrap-up policy documented
