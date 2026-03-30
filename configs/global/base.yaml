@@ -29,3 +29,9 @@ observability:
 collection:
   fluent_bit_forward_port: 24224
   host_log_path: ./data/host-logs
+
+endpoint_management:
+  inventory_view: security.endpoint_activity
+  default_windows_lane: vector-windows-endpoint
+  status_active_minutes: 15
+  status_idle_minutes: 60

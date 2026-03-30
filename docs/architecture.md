@@ -15,12 +15,14 @@ flowchart LR
   WinFluentBit[Windows Fluent Bit winevtlog] --> Normalize
   Normalize --> Buffer[(NATS JetStream)]
   Buffer --> Store[(ClickHouse security.events)]
+  Store --> EndpointInventory[(security.endpoint_activity)]
   Buffer --> Debug[Vector console sink]
 
   Store --> Detect[Detection service]
   Detect --> Candidates[(security.alert_candidates)]
 
   Store --> Grafana[Grafana dashboards + rules]
+  EndpointInventory --> Grafana
   Candidates --> Grafana
   Prom[Prometheus] --> Grafana
 
@@ -115,6 +117,10 @@ Purpose:
 - durable event storage
 - fast analytical queries
 - retention and lifecycle
+
+Current local MVP:
+- `security.events` stores normalized events
+- `security.endpoint_activity` exposes telemetry-derived endpoint last-seen/status inventory
 
 Options:
 - ClickHouse

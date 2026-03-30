@@ -19,6 +19,7 @@ Windows Event Log (Application/System/Security)
 - Windows endpoint enrollment script: `scripts/enroll-windows-endpoint.sh`
 - Replace `HAYABUSA_VECTOR_HOST` with the reachable IP or hostname for the Hayabusa Vector service.
 - Windows endpoint validation script: `scripts/windows-endpoint-check.sh`
+- Endpoint activity inventory report: `scripts/endpoint-activity-report.sh`
 - Windows real-host cutover guard script: `scripts/windows-real-host-cutover-check.sh`
 - Windows permit-origin helper script: `scripts/set-windows-permit-origin.sh`
 - Windows one-command cutover orchestrator: `scripts/windows-cutover-orchestrator.sh`
@@ -44,6 +45,7 @@ Vector normalization writes:
 5. Validate in Hayabusa:
    - `docker compose logs -f vector`
    - `WINDOWS_CHECK_COMPUTER=WIN-ENDPOINT-01 ./scripts/windows-endpoint-check.sh`
+   - `./scripts/endpoint-activity-report.sh --lane vector-windows-endpoint`
 
 ## Local Simulation Path
 
@@ -106,5 +108,6 @@ Manual path:
 - mTLS hardening toolkit (cert script + templates): complete
 - mTLS enabled in active stack path: complete
 - Endpoint enrollment/identity strategy (bundle + endpoint client cert): complete
+- Endpoint visibility baseline (last-seen/status inventory view + report script): complete
 - Production hardening still pending:
   - policy rollout/update mechanism

@@ -131,3 +131,12 @@ WHERE active
   AND database = 'security'
   AND table = 'events'
 ```
+
+## 11) Endpoint activity baseline (last-seen status)
+
+```sql
+SELECT endpoint_id, lane, status, minutes_since_last_seen, total_events, last_seen
+FROM security.endpoint_activity
+ORDER BY last_seen DESC
+LIMIT 50
+```

@@ -117,6 +117,11 @@ query_alert_candidates_table_exists() {
     --data-binary "SELECT count() FROM system.tables WHERE database = 'security' AND name = 'alert_candidates' FORMAT TabSeparated" | tr -d '\r\n'
 }
 
+query_endpoint_activity_view_exists() {
+  curl -fsS "http://localhost:8123/" \
+    --data-binary "SELECT count() FROM system.tables WHERE database = 'security' AND name = 'endpoint_activity' FORMAT TabSeparated" | tr -d '\r\n'
+}
+
 query_ingest_source_count() {
   local ingest_source="$1"
   curl -fsS "http://localhost:8123/" \
@@ -210,6 +215,14 @@ if [[ "${alert_candidates_table_exists}" == "1" ]]; then
   printf "[%s] OK: security.alert_candidates table exists\n" "$(timestamp)"
 else
   printf "[%s] ERROR: security.alert_candidates table missing\n" "$(timestamp)" >&2
+  exit 1
+fi
+
+endpoint_activity_view_exists="$(query_endpoint_activity_view_exists)"
+if [[ "${endpoint_activity_view_exists}" == "1" ]]; then
+  printf "[%s] OK: security.endpoint_activity view exists\n" "$(timestamp)"
+else
+  printf "[%s] ERROR: security.endpoint_activity view missing\n" "$(timestamp)" >&2
   exit 1
 fi
 

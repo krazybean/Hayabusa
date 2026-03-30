@@ -112,8 +112,15 @@ Deliver:
 - Schema version stamping in Vector normalization
 - ClickHouse migration path for `security.events.schema_version`
 
+## Phase 15: Endpoint visibility baseline (completed)
+
+Deliver:
+- ClickHouse endpoint inventory/activity view (`security.endpoint_activity`)
+- Migration coverage for endpoint inventory view in existing deployments
+- Endpoint activity report script with stale/offline checks
+
 ## Next focus
 
 - First real Windows host deployment using existing cutover orchestrator workflow
-- Endpoint/agent management model for broader host coverage
+- Endpoint policy rollout + drift tracking model for broader host coverage
 - Compliance/reporting starter pack

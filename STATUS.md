@@ -22,6 +22,7 @@ Build toward Wazuh-comparable capability while keeping the local Docker MVP stab
 - Windows real-host cutover guard: endpoint-specific validation + CIDR hardening check (`./scripts/windows-real-host-cutover-check.sh`)
 - Windows cutover orchestrator: one-command workflow (`./scripts/windows-cutover-orchestrator.sh`)
 - Canonical schema contract: `hayabusa.event.v1` active (`schema_version` anchor + contract doc)
+- Endpoint visibility baseline: telemetry-derived inventory view + report script (`security.endpoint_activity`, `./scripts/endpoint-activity-report.sh`)
 - Storage TTL: `7 days` on `security.events`
 - Storage budget guardrail: `1 GiB` target via `./scripts/storage-budget-guard.sh`
 - Grafana alerts: ingest stall + storage budget + failed-login burst + Windows correlation rule alerts
@@ -48,11 +49,12 @@ Build toward Wazuh-comparable capability while keeping the local Docker MVP stab
 - Detection engine: MVP complete
 - Alert routing/policy: partial-strong (fan-out paths + retry hardening)
 - Investigation workflow: partial
+- Endpoint/agent management: early baseline (telemetry-derived inventory, no central policy plane yet)
 
 ## Next Priority Queue
 
 1. First real Windows host deployment using endpoint enrollment bundle
-2. Endpoint/agent management model for Wazuh-comparable host visibility
+2. Endpoint policy rollout + drift tracking model (build on endpoint activity baseline)
 3. Compliance/reporting starter pack
 4. Investigation workflow acceleration (case linkage + analyst workflow automation)
 
@@ -65,7 +67,8 @@ Build toward Wazuh-comparable capability while keeping the local Docker MVP stab
 5. `docker compose logs --tail=120 grafana`
 6. `./scripts/windows-endpoint-check.sh` (after onboarding a real Windows host)
 7. `./scripts/apply-clickhouse-migrations.sh`
-8. Review `docs/component-checklist.md`, `docs/wazuh-parity-map.md`, `docs/mvp-plan.md`, and `docs/windows-event-collection.md`
+8. `./scripts/endpoint-activity-report.sh --lane vector-windows-endpoint`
+9. Review `docs/component-checklist.md`, `docs/wazuh-parity-map.md`, `docs/mvp-plan.md`, and `docs/windows-event-collection.md`
 
 ## Linear Tracking
 
