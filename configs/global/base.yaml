@@ -3,6 +3,10 @@ platform:
   site: primary
   timezone: UTC
 
+schema:
+  canonical_event_version: hayabusa.event.v1
+  canonical_event_contract_file: ./configs/global/event-schema-v1.yaml
+
 network:
   nats_url: nats://nats:4222
   clickhouse_url: http://clickhouse:8123

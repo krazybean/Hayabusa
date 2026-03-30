@@ -18,6 +18,7 @@ Current status is local MVP foundation, not full feature parity yet.
 
 - Core stack running in Docker Compose: ClickHouse, Keeper, NATS, Vector, Prometheus, Grafana
 - Active buffered ingest path (`Vector -> NATS JetStream -> ClickHouse`)
+- Canonical normalized schema contract active (`hayabusa.event.v1` with `schema_version` anchor)
 - Host collector baseline with Fluent Bit (`tail -> forward -> Vector`)
 - Windows event collection strategy defined (`winevtlog -> forward -> Vector:24225`) + validation script
 - Windows lane locally validated via simulator traffic (`vector-windows-endpoint`)
@@ -65,6 +66,6 @@ Current status is local MVP foundation, not full feature parity yet.
 ## Next parity-focused milestones
 
 1. First real Windows host deployment using enrollment bundle (replace simulator-driven validation)
-2. Canonical schema + versioning model for stable long-term content packs
-3. Investigation workflow acceleration (case linkage + analyst workflow automation)
-4. Endpoint/agent management model for Wazuh-comparable host visibility
+2. Investigation workflow acceleration (case linkage + analyst workflow automation)
+3. Endpoint/agent management model for Wazuh-comparable host visibility
+4. Compliance/reporting starter pack

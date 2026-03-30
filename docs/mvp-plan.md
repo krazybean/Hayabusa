@@ -105,9 +105,15 @@ Deliver:
 - Grafana alert rules for Windows multi-signal correlation detections
 - Real-host cutover guard script for endpoint-specific validation + `permit_origin` hardening checks
 
+## Phase 14: Canonical schema + versioning baseline (completed)
+
+Deliver:
+- Canonical normalized event schema contract (`hayabusa.event.v1`)
+- Schema version stamping in Vector normalization
+- ClickHouse migration path for `security.events.schema_version`
+
 ## Next focus
 
-- Define canonical normalized schema versioning strategy
 - First real Windows host deployment using existing cutover orchestrator workflow
 - Endpoint/agent management model for broader host coverage
 - Compliance/reporting starter pack

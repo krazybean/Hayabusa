@@ -12,6 +12,9 @@ fi
 echo "Starting local security platform starter stack..."
 docker compose up -d
 
+echo "Applying ClickHouse migrations..."
+bash "${ROOT_DIR}/scripts/apply-clickhouse-migrations.sh"
+
 echo
 echo "Current container status:"
 docker compose ps

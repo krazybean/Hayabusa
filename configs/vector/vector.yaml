@@ -78,6 +78,7 @@ transforms:
         .ts = format_timestamp!(now(), format: "%Y-%m-%d %H:%M:%S%.3f", timezone: "UTC")
       }
       .platform = "local-mvp"
+      .schema_version = "hayabusa.event.v1"
       if exists(.source_type) {
         .ingest_source = "vector-" + to_string!(.source_type)
       } else {
@@ -128,6 +129,7 @@ transforms:
       if exists(.level) { fields.level = to_string!(.level) }
       if exists(.ProviderName) { fields.provider_name = to_string!(.ProviderName) }
       if exists(.provider_name) { fields.provider_name = to_string!(.provider_name) }
+      if exists(.schema_version) { fields.schema_version = to_string!(.schema_version) }
       .fields = fields
 
       # Remove top-level source fields now captured in the map

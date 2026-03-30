@@ -28,6 +28,7 @@ Windows Event Log (Application/System/Security)
 
 Vector normalization writes:
 - `ingest_source = vector-windows-endpoint` for tag `windows.events`
+- `schema_version = hayabusa.event.v1`
 - `message` from source `message`, `log`, `msg`, or `Message`
 - source details into `fields` map (including Windows keys when present)
 

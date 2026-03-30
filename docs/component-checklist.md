@@ -19,10 +19,10 @@
 - [x] test generator plan
 
 ## Ingestion / Normalization
-- [ ] canonical event schema
+- [x] canonical event schema
 - [x] Vector transforms
 - [x] local sample pipeline
-- [ ] schema versioning
+- [x] schema versioning
 
 ## Transport
 - [x] NATS subject/stream naming

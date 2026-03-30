@@ -55,6 +55,7 @@ Active ingest path is now `Vector -> NATS JetStream -> ClickHouse`, with ClickHo
 - Prometheus scraping and Grafana datasource provisioning are in place
 - SQL-first detection engine MVP writes triggered candidates to `security.alert_candidates`
 - Detection tuning controls include per-rule cooldown and host/user scoped suppressions (`suppression_*` + `{{SUPPRESSION_CONDITION}}`)
+- Canonical event schema contract is active (`hayabusa.event.v1` stamped into `schema_version`)
 - JetStream stream bootstrap is automated (`HAYABUSA_EVENTS` + `VECTOR_CLICKHOUSE_WRITER`)
 - Fluent Bit host collector baseline is active (`forward -> Vector:24224`)
 - Windows event collector template is defined (`winevtlog -> forward -> Vector:24225`)
@@ -67,6 +68,7 @@ Active ingest path is now `Vector -> NATS JetStream -> ClickHouse`, with ClickHo
 - Feature completion policy: `docs/delivery-hygiene.md`
 - Component progress tracker: `docs/component-checklist.md`
 - Detection engine details: `docs/detection-engine.md`
+- Canonical event schema contract: `docs/canonical-event-schema.md`
 - Alert routing details: `docs/alert-routing.md`
 - Windows collection runbook: `docs/windows-event-collection.md`
 - Investigation queries: `docs/investigation-query-pack.md`
@@ -101,6 +103,12 @@ Active ingest path is now `Vector -> NATS JetStream -> ClickHouse`, with ClickHo
 
 ```bash
 ./scripts/bootstrap.sh
+```
+
+If this is an existing deployment upgraded from an older revision, re-apply schema migrations:
+
+```bash
+./scripts/apply-clickhouse-migrations.sh
 ```
 
 3. Validate each component:

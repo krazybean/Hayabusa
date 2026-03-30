@@ -21,6 +21,7 @@ Build toward Wazuh-comparable capability while keeping the local Docker MVP stab
 - Windows endpoint enrollment: bundle script + endpoint-specific client certs (`./scripts/enroll-windows-endpoint.sh`)
 - Windows real-host cutover guard: endpoint-specific validation + CIDR hardening check (`./scripts/windows-real-host-cutover-check.sh`)
 - Windows cutover orchestrator: one-command workflow (`./scripts/windows-cutover-orchestrator.sh`)
+- Canonical schema contract: `hayabusa.event.v1` active (`schema_version` anchor + contract doc)
 - Storage TTL: `7 days` on `security.events`
 - Storage budget guardrail: `1 GiB` target via `./scripts/storage-budget-guard.sh`
 - Grafana alerts: ingest stall + storage budget + failed-login burst + Windows correlation rule alerts
@@ -51,9 +52,9 @@ Build toward Wazuh-comparable capability while keeping the local Docker MVP stab
 ## Next Priority Queue
 
 1. First real Windows host deployment using endpoint enrollment bundle
-2. Canonical schema + schema versioning strategy
-3. Endpoint/agent management model for Wazuh-comparable host visibility
-4. Compliance/reporting starter pack
+2. Endpoint/agent management model for Wazuh-comparable host visibility
+3. Compliance/reporting starter pack
+4. Investigation workflow acceleration (case linkage + analyst workflow automation)
 
 ## Session Rebuild Fast Path
 
@@ -63,7 +64,8 @@ Build toward Wazuh-comparable capability while keeping the local Docker MVP stab
 4. `docker compose logs --tail=120 fluent-bit`
 5. `docker compose logs --tail=120 grafana`
 6. `./scripts/windows-endpoint-check.sh` (after onboarding a real Windows host)
-7. Review `docs/component-checklist.md`, `docs/wazuh-parity-map.md`, `docs/mvp-plan.md`, and `docs/windows-event-collection.md`
+7. `./scripts/apply-clickhouse-migrations.sh`
+8. Review `docs/component-checklist.md`, `docs/wazuh-parity-map.md`, `docs/mvp-plan.md`, and `docs/windows-event-collection.md`
 
 ## Linear Tracking
 

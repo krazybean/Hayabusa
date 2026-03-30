@@ -78,6 +78,11 @@ Purpose:
 - normalize into canonical events
 - route downstream
 
+Current contract:
+- canonical schema version: `hayabusa.event.v1`
+- runtime stamp: `security.events.schema_version`
+- contract file: `configs/global/event-schema-v1.yaml`
+
 Options:
 - Vector
 - Logstash
