@@ -1,6 +1,6 @@
 # Hayabusa Status
 
-Last updated: 2026-03-29 (America/Chicago)
+Last updated: 2026-03-30 (America/Chicago)
 
 ## Current Goal
 
@@ -23,6 +23,7 @@ Build toward Wazuh-comparable capability while keeping the local Docker MVP stab
 - Windows cutover orchestrator: one-command workflow (`./scripts/windows-cutover-orchestrator.sh`)
 - Canonical schema contract: `hayabusa.event.v1` active (`schema_version` anchor + contract doc)
 - Endpoint visibility baseline: telemetry-derived inventory view + report script (`security.endpoint_activity`, `./scripts/endpoint-activity-report.sh`)
+- Endpoint policy/drift baseline: YAML policy + drift checker (`configs/endpoints/windows-endpoints.yaml`, `./scripts/endpoint-policy-drift-check.sh`)
 - Storage TTL: `7 days` on `security.events`
 - Storage budget guardrail: `1 GiB` target via `./scripts/storage-budget-guard.sh`
 - Grafana alerts: ingest stall + storage budget + failed-login burst + Windows correlation rule alerts
@@ -49,12 +50,12 @@ Build toward Wazuh-comparable capability while keeping the local Docker MVP stab
 - Detection engine: MVP complete
 - Alert routing/policy: partial-strong (fan-out paths + retry hardening)
 - Investigation workflow: partial
-- Endpoint/agent management: early baseline (telemetry-derived inventory, no central policy plane yet)
+- Endpoint/agent management: early-partial baseline (inventory + YAML policy drift checks, no central control plane yet)
 
 ## Next Priority Queue
 
 1. First real Windows host deployment using endpoint enrollment bundle
-2. Endpoint policy rollout + drift tracking model (build on endpoint activity baseline)
+2. Endpoint policy automation from enrollment/cutover flow (promote required endpoints + drift enforcement)
 3. Compliance/reporting starter pack
 4. Investigation workflow acceleration (case linkage + analyst workflow automation)
 
@@ -68,7 +69,8 @@ Build toward Wazuh-comparable capability while keeping the local Docker MVP stab
 6. `./scripts/windows-endpoint-check.sh` (after onboarding a real Windows host)
 7. `./scripts/apply-clickhouse-migrations.sh`
 8. `./scripts/endpoint-activity-report.sh --lane vector-windows-endpoint`
-9. Review `docs/component-checklist.md`, `docs/wazuh-parity-map.md`, `docs/mvp-plan.md`, and `docs/windows-event-collection.md`
+9. `./scripts/endpoint-policy-drift-check.sh --soft-fail`
+10. Review `docs/component-checklist.md`, `docs/wazuh-parity-map.md`, `docs/mvp-plan.md`, and `docs/windows-event-collection.md`
 
 ## Linear Tracking
 

@@ -119,8 +119,15 @@ Deliver:
 - Migration coverage for endpoint inventory view in existing deployments
 - Endpoint activity report script with stale/offline checks
 
+## Phase 16: Endpoint policy drift baseline (completed)
+
+Deliver:
+- YAML endpoint policy source-of-truth (`configs/endpoints/windows-endpoints.yaml`)
+- Required vs optional endpoint drift checker (`scripts/endpoint-policy-drift-check.sh`)
+- Cutover orchestrator linkage to policy drift checks (`--only-id`, soft/hard fail mode)
+
 ## Next focus
 
 - First real Windows host deployment using existing cutover orchestrator workflow
-- Endpoint policy rollout + drift tracking model for broader host coverage
+- Endpoint policy automation from enrollment/cutover flow for broader host coverage
 - Compliance/reporting starter pack

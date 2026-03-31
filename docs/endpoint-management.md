@@ -81,3 +81,5 @@ Still pending for stronger Wazuh parity:
 - endpoint policy rollout/update orchestration
 - endpoint config drift tracking
 - agent lifecycle and centralized policy assignment
+
+For policy source-of-truth and required/optional drift enforcement, see `docs/endpoint-policy-model.md`.

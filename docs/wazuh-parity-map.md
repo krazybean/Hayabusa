@@ -10,7 +10,7 @@ Current status is local MVP foundation, not full feature parity yet.
 - Dashboards and visibility baseline: **partial**
 - Detection rules engine: **partial-strong**
 - Alert routing and notifications: **partial-strong**
-- Endpoint management/agents: **early-baseline**
+- Endpoint management/agents: **early-partial**
 - Investigation workflow tooling: **partial**
 - Compliance/reporting workflows: **not started**
 
@@ -27,6 +27,7 @@ Current status is local MVP foundation, not full feature parity yet.
 - Windows real-host cutover guard script (`windows-real-host-cutover-check.sh`) for endpoint-specific validation and CIDR hardening checks
 - Windows one-command cutover orchestrator (`windows-cutover-orchestrator.sh`) for enroll + hardening + validation workflow
 - Endpoint activity inventory baseline (`security.endpoint_activity` + `endpoint-activity-report.sh`)
+- Endpoint policy drift baseline (`configs/endpoints/windows-endpoints.yaml` + `endpoint-policy-drift-check.sh`)
 - Normalized events stored in ClickHouse (`security.events`)
 - External syslog ingestion over TCP/UDP (`1514`)
 - Provisioned Grafana dashboard for event visibility
@@ -67,6 +68,6 @@ Current status is local MVP foundation, not full feature parity yet.
 ## Next parity-focused milestones
 
 1. First real Windows host deployment using enrollment bundle (replace simulator-driven validation)
-2. Endpoint policy rollout + config drift tracking model
+2. Endpoint policy automation + enforcement (required endpoint promotion workflow)
 3. Investigation workflow acceleration (case linkage + analyst workflow automation)
 4. Compliance/reporting starter pack

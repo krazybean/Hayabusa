@@ -16,6 +16,7 @@
 - [x] Windows real-host cutover guard script (CIDR + endpoint-specific validation)
 - [x] Windows first-host cutover orchestrator script (enroll + CIDR hardening + validation)
 - [x] endpoint activity visibility baseline (`security.endpoint_activity` + report script)
+- [x] endpoint policy/drift baseline (`configs/endpoints/windows-endpoints.yaml` + drift check script)
 - [x] syslog input plan
 - [x] test generator plan
 

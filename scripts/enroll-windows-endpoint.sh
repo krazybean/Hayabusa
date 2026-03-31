@@ -137,6 +137,9 @@ Generated (UTC): $(date -u +"%Y-%m-%dT%H:%M:%SZ")
 3) Start/Restart Fluent Bit service.
 4) Validate from Hayabusa host:
    - ./scripts/windows-endpoint-check.sh
+5) Register/verify endpoint policy entry:
+   - configs/endpoints/windows-endpoints.yaml
+   - ./scripts/endpoint-policy-drift-check.sh --only-id ${ENDPOINT_ID} --soft-fail
 
 Vector target:
   ${VECTOR_HOST}:24225 (mTLS required)

@@ -33,5 +33,6 @@ collection:
 endpoint_management:
   inventory_view: security.endpoint_activity
   default_windows_lane: vector-windows-endpoint
+  windows_policy_file: ./configs/endpoints/windows-endpoints.yaml
   status_active_minutes: 15
   status_idle_minutes: 60

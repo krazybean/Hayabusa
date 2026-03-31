@@ -15,6 +15,9 @@ INCLUDE_LOOPBACK=false
 ALLOW_BROAD_ORIGINS=false
 FORCE_BUNDLE=false
 SKIP_RESTART=false
+SKIP_POLICY_CHECK=false
+POLICY_FILE="${WINDOWS_CUTOVER_POLICY_FILE:-${ROOT_DIR}/configs/endpoints/windows-endpoints.yaml}"
+POLICY_SOFT_FAIL=true
 DRY_RUN=false
 
 usage() {
@@ -40,6 +43,9 @@ Options:
   --allow-broad-origins      Allow broad CIDRs during final cutover check (lab-only)
   --force-bundle             Overwrite existing endpoint bundle directory
   --skip-restart             Skip Vector restart after permit_origin update
+  --skip-policy-check        Skip endpoint policy drift check
+  --policy-file <path>       Endpoint policy YAML (default: configs/endpoints/windows-endpoints.yaml)
+  --policy-hard-fail         Fail orchestrator if policy drift check detects required drift
   --dry-run                  Print commands only; do not change files/services
   -h, --help                 Show this help
 EOF
@@ -104,6 +110,18 @@ while [[ $# -gt 0 ]]; do
       SKIP_RESTART=true
       shift
       ;;
+    --skip-policy-check)
+      SKIP_POLICY_CHECK=true
+      shift
+      ;;
+    --policy-file)
+      POLICY_FILE="${2:-}"
+      shift 2
+      ;;
+    --policy-hard-fail)
+      POLICY_SOFT_FAIL=false
+      shift
+      ;;
     --dry-run)
       DRY_RUN=true
       shift
@@ -136,6 +154,7 @@ echo "vector_host=${VECTOR_HOST}"
 echo "expected_cidr=${EXPECTED_CIDR}"
 echo "computer=${COMPUTER}"
 echo "output_dir=${OUTPUT_DIR}"
+echo "policy_file=${POLICY_FILE}"
 echo "dry_run=${DRY_RUN}"
 echo
 
@@ -160,16 +179,16 @@ if [[ "${ALLOW_BROAD_ORIGINS}" == "true" ]]; then
   cutover_cmd+=(--allow-broad-origins)
 fi
 
-echo "[1/4] Building endpoint enrollment bundle..."
+echo "[1/5] Building endpoint enrollment bundle..."
 run_cmd "${enroll_cmd[@]}"
 
-echo "[2/4] Updating Vector Windows permit_origin..."
+echo "[2/5] Updating Vector Windows permit_origin..."
 run_cmd "${permit_cmd[@]}"
 
 if [[ "${SKIP_RESTART}" == "true" ]]; then
-  echo "[3/4] Skipping Vector restart (--skip-restart)."
+  echo "[3/5] Skipping Vector restart (--skip-restart)."
 else
-  echo "[3/4] Restarting Vector..."
+  echo "[3/5] Restarting Vector..."
   if [[ "${DRY_RUN}" == "true" ]]; then
     run_cmd /bin/bash -lc "DOCKER_CONFIG=/tmp/docker-nocreds docker compose up -d vector"
   else
@@ -177,8 +196,19 @@ else
   fi
 fi
 
-echo "[4/4] Running real-host cutover checks..."
+echo "[4/5] Running real-host cutover checks..."
 run_cmd "${cutover_cmd[@]}"
+
+if [[ "${SKIP_POLICY_CHECK}" == "true" ]]; then
+  echo "[5/5] Skipping endpoint policy drift check (--skip-policy-check)."
+else
+  echo "[5/5] Running endpoint policy drift check..."
+  policy_cmd=(./scripts/endpoint-policy-drift-check.sh --policy-file "${POLICY_FILE}" --only-id "${ENDPOINT_ID}")
+  if [[ "${POLICY_SOFT_FAIL}" == "true" ]]; then
+    policy_cmd+=(--soft-fail)
+  fi
+  run_cmd "${policy_cmd[@]}"
+fi
 
 echo
 echo "Cutover workflow completed."

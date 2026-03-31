@@ -57,6 +57,7 @@ Active ingest path is now `Vector -> NATS JetStream -> ClickHouse`, with ClickHo
 - Detection tuning controls include per-rule cooldown and host/user scoped suppressions (`suppression_*` + `{{SUPPRESSION_CONDITION}}`)
 - Canonical event schema contract is active (`hayabusa.event.v1` stamped into `schema_version`)
 - Endpoint visibility baseline is active (`security.endpoint_activity` + `./scripts/endpoint-activity-report.sh`)
+- Endpoint policy/drift baseline is active (`configs/endpoints/windows-endpoints.yaml` + `./scripts/endpoint-policy-drift-check.sh`)
 - JetStream stream bootstrap is automated (`HAYABUSA_EVENTS` + `VECTOR_CLICKHOUSE_WRITER`)
 - Fluent Bit host collector baseline is active (`forward -> Vector:24224`)
 - Windows event collector template is defined (`winevtlog -> forward -> Vector:24225`)
@@ -75,6 +76,7 @@ Active ingest path is now `Vector -> NATS JetStream -> ClickHouse`, with ClickHo
 - Investigation queries: `docs/investigation-query-pack.md`
 - Investigation playbooks: `docs/investigation-playbooks.md`
 - Endpoint visibility/management baseline: `docs/endpoint-management.md`
+- Endpoint policy/drift model: `docs/endpoint-policy-model.md`
 
 ## Repository layout
 
@@ -82,6 +84,7 @@ Active ingest path is now `Vector -> NATS JetStream -> ClickHouse`, with ClickHo
 .
 ├── configs/
 │   ├── environments/
+│   ├── endpoints/
 │   ├── global/
 │   ├── clickhouse/
 │   ├── fluent-bit/
@@ -319,6 +322,12 @@ One-command real-host cutover orchestration:
   --vector-host 192.168.1.50 \
   --expected-cidr 192.168.10.22/32 \
   --computer WIN-ENDPOINT-01
+```
+
+Check endpoint policy drift:
+
+```bash
+./scripts/endpoint-policy-drift-check.sh
 ```
 
 Trigger Windows EventID detection scenarios:

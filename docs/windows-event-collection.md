@@ -24,6 +24,8 @@ Windows Event Log (Application/System/Security)
 - Windows permit-origin helper script: `scripts/set-windows-permit-origin.sh`
 - Windows one-command cutover orchestrator: `scripts/windows-cutover-orchestrator.sh`
 - mTLS cert generation script: `scripts/generate-windows-forward-certs.sh`
+- Endpoint policy file: `configs/endpoints/windows-endpoints.yaml`
+- Endpoint policy drift check script: `scripts/endpoint-policy-drift-check.sh`
 
 ## Field Expectations in Hayabusa
 
@@ -85,6 +87,7 @@ This runs:
 - `permit_origin` update
 - Vector restart
 - endpoint + CIDR hardening validation
+- endpoint policy drift check for the selected endpoint (`--only-id`)
 
 Use `--dry-run` first to preview all steps without changing files/services.
 
@@ -99,6 +102,8 @@ Manual path:
    - `DOCKER_CONFIG=/tmp/docker-nocreds docker compose up -d vector`
 5. Validate endpoint-specific traffic and CIDR hardening:
    - `./scripts/windows-real-host-cutover-check.sh --computer WIN-ENDPOINT-01 --expected-cidr 192.168.10.22/32`
+6. Run endpoint policy drift check (soft-fail until endpoint is promoted to required):
+   - `./scripts/endpoint-policy-drift-check.sh --only-id WIN-ENDPOINT-01 --soft-fail`
 
 ## Current Scope
 
@@ -109,5 +114,6 @@ Manual path:
 - mTLS enabled in active stack path: complete
 - Endpoint enrollment/identity strategy (bundle + endpoint client cert): complete
 - Endpoint visibility baseline (last-seen/status inventory view + report script): complete
+- Endpoint policy/drift baseline (YAML source-of-truth + required/optional drift checks): complete
 - Production hardening still pending:
-  - policy rollout/update mechanism
+  - policy automation from enrollment flow

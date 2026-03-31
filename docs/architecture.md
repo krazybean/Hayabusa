@@ -204,7 +204,12 @@ Purpose:
 - environment overrides
 - per-service config
 - rule definitions
+- endpoint policy source-of-truth and drift checks
 
 Format:
 - YAML for human-authored config
 - env vars or secrets for sensitive values
+
+Current local MVP:
+- Endpoint policy file: `configs/endpoints/windows-endpoints.yaml`
+- Drift check command: `./scripts/endpoint-policy-drift-check.sh`
