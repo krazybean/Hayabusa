@@ -126,8 +126,15 @@ Deliver:
 - Required vs optional endpoint drift checker (`scripts/endpoint-policy-drift-check.sh`)
 - Cutover orchestrator linkage to policy drift checks (`--only-id`, soft/hard fail mode)
 
+## Phase 17: Endpoint policy automation baseline (completed)
+
+Deliver:
+- Endpoint policy upsert automation (`scripts/upsert-endpoint-policy.sh`)
+- Enrollment integration (auto-register/update endpoint policy entries)
+- Cutover integration for required promotion + hard enforcement (`--promote-required-on-success`, `--first-real-host`)
+
 ## Next focus
 
-- First real Windows host deployment using existing cutover orchestrator workflow
-- Endpoint policy automation from enrollment/cutover flow for broader host coverage
+- First real Windows host deployment execution using `--first-real-host`
+- Endpoint lifecycle policy (certificate rotation/revocation + decommission workflow)
 - Compliance/reporting starter pack

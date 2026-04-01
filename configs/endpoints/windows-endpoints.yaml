@@ -6,6 +6,8 @@ defaults:
 endpoints:
   - id: WIN-ENDPOINT-01
     computer: WIN-ENDPOINT-01
+    lane: vector-windows-endpoint
+    max_stale_minutes: 120
     required: false
-    owner: soc
+    owner: "soc"
     notes: "Set required=true after first successful real-host cutover."

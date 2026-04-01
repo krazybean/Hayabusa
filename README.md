@@ -58,6 +58,7 @@ Active ingest path is now `Vector -> NATS JetStream -> ClickHouse`, with ClickHo
 - Canonical event schema contract is active (`hayabusa.event.v1` stamped into `schema_version`)
 - Endpoint visibility baseline is active (`security.endpoint_activity` + `./scripts/endpoint-activity-report.sh`)
 - Endpoint policy/drift baseline is active (`configs/endpoints/windows-endpoints.yaml` + `./scripts/endpoint-policy-drift-check.sh`)
+- Endpoint policy automation is active (`./scripts/upsert-endpoint-policy.sh` wired into enrollment/cutover)
 - JetStream stream bootstrap is automated (`HAYABUSA_EVENTS` + `VECTOR_CLICKHOUSE_WRITER`)
 - Fluent Bit host collector baseline is active (`forward -> Vector:24224`)
 - Windows event collector template is defined (`winevtlog -> forward -> Vector:24225`)
@@ -328,6 +329,12 @@ Check endpoint policy drift:
 
 ```bash
 ./scripts/endpoint-policy-drift-check.sh
+```
+
+Upsert/update endpoint policy:
+
+```bash
+./scripts/upsert-endpoint-policy.sh --id WIN-ENDPOINT-01 --computer WIN-ENDPOINT-01
 ```
 
 Trigger Windows EventID detection scenarios:

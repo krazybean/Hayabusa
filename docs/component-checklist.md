@@ -17,6 +17,7 @@
 - [x] Windows first-host cutover orchestrator script (enroll + CIDR hardening + validation)
 - [x] endpoint activity visibility baseline (`security.endpoint_activity` + report script)
 - [x] endpoint policy/drift baseline (`configs/endpoints/windows-endpoints.yaml` + drift check script)
+- [x] endpoint policy automation in enrollment/cutover (`upsert-endpoint-policy.sh` + required promotion flow)
 - [x] syslog input plan
 - [x] test generator plan
 

@@ -4,9 +4,13 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TLS_DIR="${ROOT_DIR}/secrets/windows-forward-tls"
 OUTPUT_BASE_DIR="${ROOT_DIR}/dist/windows-endpoints"
+POLICY_FILE="${WINDOWS_POLICY_FILE:-${ROOT_DIR}/configs/endpoints/windows-endpoints.yaml}"
 ENDPOINT_ID=""
 VECTOR_HOST=""
 FORCE=false
+SKIP_POLICY_REGISTER=false
+POLICY_OWNER=""
+POLICY_NOTES=""
 
 usage() {
   cat <<'EOF'
@@ -18,6 +22,10 @@ Options:
   --vector-host <value>   Reachable Hayabusa host/IP for Vector Windows lane (24225)
   --tls-dir <path>        TLS directory containing ca.crt + ca.key (default: secrets/windows-forward-tls)
   --output-dir <path>     Bundle output base dir (default: dist/windows-endpoints)
+  --policy-file <path>    Endpoint policy file path (default: configs/endpoints/windows-endpoints.yaml)
+  --skip-policy-register  Skip policy registration/update step
+  --policy-owner <value>  Optional owner value to write into policy entry
+  --policy-notes <value>  Optional notes value to write into policy entry
   --force                 Overwrite existing endpoint bundle directory
   -h, --help              Show this help
 EOF
@@ -39,6 +47,22 @@ while [[ $# -gt 0 ]]; do
       ;;
     --output-dir)
       OUTPUT_BASE_DIR="${2:-}"
+      shift 2
+      ;;
+    --policy-file)
+      POLICY_FILE="${2:-}"
+      shift 2
+      ;;
+    --skip-policy-register)
+      SKIP_POLICY_REGISTER=true
+      shift
+      ;;
+    --policy-owner)
+      POLICY_OWNER="${2:-}"
+      shift 2
+      ;;
+    --policy-notes)
+      POLICY_NOTES="${2:-}"
       shift 2
       ;;
     --force)
@@ -123,6 +147,17 @@ awk -v host="${VECTOR_HOST}" '
   { print }
 ' "${ROOT_DIR}/configs/fluent-bit/windows/fluent-bit-windows-mtls.conf" > "${bundle_dir}/fluent-bit.conf"
 
+if [[ "${SKIP_POLICY_REGISTER}" != "true" ]]; then
+  policy_cmd=(./scripts/upsert-endpoint-policy.sh --policy-file "${POLICY_FILE}" --id "${ENDPOINT_ID}")
+  if [[ -n "${POLICY_OWNER}" ]]; then
+    policy_cmd+=(--owner "${POLICY_OWNER}")
+  fi
+  if [[ -n "${POLICY_NOTES}" ]]; then
+    policy_cmd+=(--notes "${POLICY_NOTES}")
+  fi
+  "${policy_cmd[@]}"
+fi
+
 cat > "${bundle_dir}/README.txt" <<EOF
 Hayabusa Windows Endpoint Enrollment Bundle
 Endpoint ID: ${ENDPOINT_ID}
@@ -138,7 +173,7 @@ Generated (UTC): $(date -u +"%Y-%m-%dT%H:%M:%SZ")
 4) Validate from Hayabusa host:
    - ./scripts/windows-endpoint-check.sh
 5) Register/verify endpoint policy entry:
-   - configs/endpoints/windows-endpoints.yaml
+   - ${POLICY_FILE}
    - ./scripts/endpoint-policy-drift-check.sh --only-id ${ENDPOINT_ID} --soft-fail
 
 Vector target:
@@ -154,3 +189,12 @@ echo "  ${bundle_dir}/certs/ca.crt"
 echo "  ${bundle_dir}/certs/client.crt"
 echo "  ${bundle_dir}/certs/client.key"
 echo "  ${bundle_dir}/README.txt"
+
+if [[ "${SKIP_POLICY_REGISTER}" == "true" ]]; then
+  echo
+  echo "Policy registration skipped (--skip-policy-register)."
+else
+  echo
+  echo "Endpoint policy updated:"
+  echo "  ${POLICY_FILE}"
+fi

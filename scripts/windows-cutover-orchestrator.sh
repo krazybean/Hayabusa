@@ -18,6 +18,9 @@ SKIP_RESTART=false
 SKIP_POLICY_CHECK=false
 POLICY_FILE="${WINDOWS_CUTOVER_POLICY_FILE:-${ROOT_DIR}/configs/endpoints/windows-endpoints.yaml}"
 POLICY_SOFT_FAIL=true
+PROMOTE_REQUIRED_ON_SUCCESS=false
+PROMOTION_MAX_STALE_MINUTES="${WINDOWS_CUTOVER_PROMOTION_MAX_STALE_MINUTES:-120}"
+FIRST_REAL_HOST=false
 DRY_RUN=false
 
 usage() {
@@ -46,6 +49,11 @@ Options:
   --skip-policy-check        Skip endpoint policy drift check
   --policy-file <path>       Endpoint policy YAML (default: configs/endpoints/windows-endpoints.yaml)
   --policy-hard-fail         Fail orchestrator if policy drift check detects required drift
+  --promote-required-on-success
+                             Promote endpoint policy entry to required=true after successful checks
+  --promotion-max-stale-minutes <n>
+                             Set max_stale_minutes when promoting required endpoint (default: 120)
+  --first-real-host          Convenience mode: promote required on success + post-promotion hard check
   --dry-run                  Print commands only; do not change files/services
   -h, --help                 Show this help
 EOF
@@ -122,6 +130,18 @@ while [[ $# -gt 0 ]]; do
       POLICY_SOFT_FAIL=false
       shift
       ;;
+    --promote-required-on-success)
+      PROMOTE_REQUIRED_ON_SUCCESS=true
+      shift
+      ;;
+    --promotion-max-stale-minutes)
+      PROMOTION_MAX_STALE_MINUTES="${2:-}"
+      shift 2
+      ;;
+    --first-real-host)
+      FIRST_REAL_HOST=true
+      shift
+      ;;
     --dry-run)
       DRY_RUN=true
       shift
@@ -148,6 +168,16 @@ if ! [[ "${MIN_EVENTS}" =~ ^[0-9]+$ && "${LOOKBACK_MINUTES}" =~ ^[0-9]+$ ]]; the
   exit 1
 fi
 
+if ! [[ "${PROMOTION_MAX_STALE_MINUTES}" =~ ^[0-9]+$ ]]; then
+  echo "ERROR: --promotion-max-stale-minutes must be an integer." >&2
+  exit 1
+fi
+
+if [[ "${FIRST_REAL_HOST}" == "true" ]]; then
+  PROMOTE_REQUIRED_ON_SUCCESS=true
+  POLICY_SOFT_FAIL=true
+fi
+
 echo "== Hayabusa Windows Cutover Orchestrator =="
 echo "endpoint_id=${ENDPOINT_ID}"
 echo "vector_host=${VECTOR_HOST}"
@@ -155,10 +185,18 @@ echo "expected_cidr=${EXPECTED_CIDR}"
 echo "computer=${COMPUTER}"
 echo "output_dir=${OUTPUT_DIR}"
 echo "policy_file=${POLICY_FILE}"
+echo "promote_required_on_success=${PROMOTE_REQUIRED_ON_SUCCESS}"
+echo "first_real_host=${FIRST_REAL_HOST}"
 echo "dry_run=${DRY_RUN}"
 echo
 
-enroll_cmd=(./scripts/enroll-windows-endpoint.sh --endpoint-id "${ENDPOINT_ID}" --vector-host "${VECTOR_HOST}" --output-dir "${OUTPUT_DIR}")
+enroll_cmd=(
+  ./scripts/enroll-windows-endpoint.sh
+  --endpoint-id "${ENDPOINT_ID}"
+  --vector-host "${VECTOR_HOST}"
+  --output-dir "${OUTPUT_DIR}"
+  --policy-file "${POLICY_FILE}"
+)
 if [[ "${FORCE_BUNDLE}" == "true" ]]; then
   enroll_cmd+=(--force)
 fi
@@ -179,16 +217,16 @@ if [[ "${ALLOW_BROAD_ORIGINS}" == "true" ]]; then
   cutover_cmd+=(--allow-broad-origins)
 fi
 
-echo "[1/5] Building endpoint enrollment bundle..."
+echo "[1/6] Building endpoint enrollment bundle..."
 run_cmd "${enroll_cmd[@]}"
 
-echo "[2/5] Updating Vector Windows permit_origin..."
+echo "[2/6] Updating Vector Windows permit_origin..."
 run_cmd "${permit_cmd[@]}"
 
 if [[ "${SKIP_RESTART}" == "true" ]]; then
-  echo "[3/5] Skipping Vector restart (--skip-restart)."
+  echo "[3/6] Skipping Vector restart (--skip-restart)."
 else
-  echo "[3/5] Restarting Vector..."
+  echo "[3/6] Restarting Vector..."
   if [[ "${DRY_RUN}" == "true" ]]; then
     run_cmd /bin/bash -lc "DOCKER_CONFIG=/tmp/docker-nocreds docker compose up -d vector"
   else
@@ -196,18 +234,40 @@ else
   fi
 fi
 
-echo "[4/5] Running real-host cutover checks..."
+echo "[4/6] Running real-host cutover checks..."
 run_cmd "${cutover_cmd[@]}"
 
 if [[ "${SKIP_POLICY_CHECK}" == "true" ]]; then
-  echo "[5/5] Skipping endpoint policy drift check (--skip-policy-check)."
+  echo "[5/6] Skipping endpoint policy drift check (--skip-policy-check)."
 else
-  echo "[5/5] Running endpoint policy drift check..."
+  echo "[5/6] Running endpoint policy drift check..."
   policy_cmd=(./scripts/endpoint-policy-drift-check.sh --policy-file "${POLICY_FILE}" --only-id "${ENDPOINT_ID}")
   if [[ "${POLICY_SOFT_FAIL}" == "true" ]]; then
     policy_cmd+=(--soft-fail)
   fi
   run_cmd "${policy_cmd[@]}"
+fi
+
+if [[ "${PROMOTE_REQUIRED_ON_SUCCESS}" == "true" ]]; then
+  echo "[6/6] Promoting endpoint policy to required and verifying hard-fail enforcement..."
+  promote_cmd=(
+    ./scripts/upsert-endpoint-policy.sh
+    --policy-file "${POLICY_FILE}"
+    --id "${ENDPOINT_ID}"
+    --computer "${COMPUTER}"
+    --required true
+    --max-stale-minutes "${PROMOTION_MAX_STALE_MINUTES}"
+  )
+  run_cmd "${promote_cmd[@]}"
+
+  enforce_cmd=(
+    ./scripts/endpoint-policy-drift-check.sh
+    --policy-file "${POLICY_FILE}"
+    --only-id "${ENDPOINT_ID}"
+  )
+  run_cmd "${enforce_cmd[@]}"
+else
+  echo "[6/6] Skipping policy promotion (use --promote-required-on-success or --first-real-host)."
 fi
 
 echo

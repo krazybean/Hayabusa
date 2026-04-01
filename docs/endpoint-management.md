@@ -76,10 +76,10 @@ Included now:
 - telemetry-derived endpoint inventory
 - lane-level endpoint visibility
 - scriptable stale/offline checks
+- endpoint policy source-of-truth (YAML) and drift checks
+- enrollment/cutover policy automation with required-endpoint promotion option
 
 Still pending for stronger Wazuh parity:
-- endpoint policy rollout/update orchestration
-- endpoint config drift tracking
 - agent lifecycle and centralized policy assignment
 
 For policy source-of-truth and required/optional drift enforcement, see `docs/endpoint-policy-model.md`.

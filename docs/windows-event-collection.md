@@ -88,8 +88,20 @@ This runs:
 - Vector restart
 - endpoint + CIDR hardening validation
 - endpoint policy drift check for the selected endpoint (`--only-id`)
+- optional required-endpoint promotion + hard enforcement check (`--first-real-host`)
 
 Use `--dry-run` first to preview all steps without changing files/services.
+
+For first real-host cutover where the endpoint should become required:
+
+```bash
+./scripts/windows-cutover-orchestrator.sh \
+  --endpoint-id WIN-ENDPOINT-01 \
+  --vector-host 192.168.1.50 \
+  --expected-cidr 192.168.10.22/32 \
+  --computer WIN-ENDPOINT-01 \
+  --first-real-host
+```
 
 Manual path:
 
@@ -116,4 +128,5 @@ Manual path:
 - Endpoint visibility baseline (last-seen/status inventory view + report script): complete
 - Endpoint policy/drift baseline (YAML source-of-truth + required/optional drift checks): complete
 - Production hardening still pending:
-  - policy automation from enrollment flow
+  - first real-host deployment execution using `--first-real-host`
+  - certificate rotation/revocation lifecycle

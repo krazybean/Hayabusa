@@ -7,6 +7,12 @@ Policy file:
 
 Drift check command:
 - `./scripts/endpoint-policy-drift-check.sh`
+Policy update command:
+- `./scripts/upsert-endpoint-policy.sh`
+
+Automation hooks:
+- `scripts/enroll-windows-endpoint.sh` auto-upserts policy entry (unless `--skip-policy-register`)
+- `scripts/windows-cutover-orchestrator.sh` can promote endpoint to required + enforce hard drift check
 
 ## Policy Structure
 
@@ -59,6 +65,27 @@ Lab mode (report drift, but do not fail):
 
 ```bash
 ./scripts/endpoint-policy-drift-check.sh --soft-fail
+```
+
+Upsert or update endpoint policy entry:
+
+```bash
+./scripts/upsert-endpoint-policy.sh \
+  --id WIN-ENDPOINT-01 \
+  --computer WIN-ENDPOINT-01 \
+  --required true \
+  --max-stale-minutes 120
+```
+
+First real-host cutover profile (promote + hard enforcement):
+
+```bash
+./scripts/windows-cutover-orchestrator.sh \
+  --endpoint-id WIN-ENDPOINT-01 \
+  --vector-host 192.168.1.50 \
+  --expected-cidr 192.168.10.22/32 \
+  --computer WIN-ENDPOINT-01 \
+  --first-real-host
 ```
 
 ## Operational Recommendation

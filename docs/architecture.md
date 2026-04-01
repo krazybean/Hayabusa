@@ -213,3 +213,4 @@ Format:
 Current local MVP:
 - Endpoint policy file: `configs/endpoints/windows-endpoints.yaml`
 - Drift check command: `./scripts/endpoint-policy-drift-check.sh`
+- Policy upsert automation: `./scripts/upsert-endpoint-policy.sh` (enrollment/cutover integrated)
