@@ -1,8 +1,16 @@
 # Hayabusa
 
+[![Dev MVP Validation](https://github.com/krazybean/Hayabusa/actions/workflows/dev-mvp-validation.yml/badge.svg?branch=dev)](https://github.com/krazybean/Hayabusa/actions/workflows/dev-mvp-validation.yml)
+[![docker-compose ready](https://img.shields.io/badge/docker--compose-ready-46f39a?labelColor=0b1718&color=46f39a)](MVP_RUNBOOK.md)
+[![License: MIT](https://img.shields.io/github/license/krazybean/Hayabusa?label=license)](LICENSE)
+
 > Self-hosted suspicious-login detection for servers.
 
 Hayabusa is a self-hosted security telemetry MVP focused on detecting suspicious login activity on servers.
+
+- Live site: https://krazybean.github.io/Hayabusa/
+- Focus: suspicious login detection on Linux/syslog and one Windows host lane
+- What this is: a small Docker Compose proof of `ingest -> store -> detect -> alert`
 
 ```text
 ingest -> store -> detect -> alert
@@ -62,12 +70,35 @@ Today it proves one narrow path end to end with a local Docker Compose stack. It
 - `grafana`: dashboard and alerting
 - `alert-sink`: webhook receiver
 
+## Repository Layout
+
+- `configs/`: service config, rules, and provisioning
+- `services/`: small custom runtime code
+- `scripts/`: bootstrap, validation, and operator helpers
+- `docs/`: architecture notes, runbooks, and the static Pages site
+
 ## Quick Start
 
 ```bash
 docker compose up -d --remove-orphans
 ./scripts/smoke-test.sh
 ```
+
+## Daily Dev Cycle
+
+Bring the stack up before coding or testing:
+
+```bash
+./scripts/dev-up.sh
+```
+
+When you are done, tear it back down without deleting volumes:
+
+```bash
+./scripts/dev-down.sh
+```
+
+Use [MVP_RUNBOOK.md](MVP_RUNBOOK.md) only when you want a full clean reset.
 
 If first boot is slow:
 - Grafana downloads the pinned ClickHouse datasource plugin on startup
@@ -123,6 +154,7 @@ Expected:
 
 - [MVP_RUNBOOK.md](MVP_RUNBOOK.md): safe project-only reset, clean rebuild, and MVP validation
 - [WINDOWS_REAL_HOST_RUNBOOK.md](WINDOWS_REAL_HOST_RUNBOOK.md): first real Windows host onboarding and validation
+- [docs/public-launch-checklist.md](docs/public-launch-checklist.md): final public repo hygiene and pre-announcement checks
 
 ## Deferred Scope
 

@@ -2,14 +2,15 @@
 
 ## Current flow
 
-1. Grafana evaluates `Hayabusa Security Failed Login Burst`.
-2. When the rule is firing, Grafana posts to `http://alert-sink:8080/alerts/default`.
+1. Grafana evaluates alert rules backed by `security.alert_candidates`.
+2. When a rule is firing, Grafana posts to `http://alert-sink:8080/alerts/default`.
 3. `alert-sink` logs the payload.
 4. If `HAYABUSA_EXTERNAL_WEBHOOK_URL` is set, `alert-sink` forwards the same payload outward.
 
-## Active alert
+## Active alerts
 
 - Rule title: `Hayabusa Security Failed Login Burst`
+- Rule title: `Hayabusa Windows Failed Logon Burst`
 - Query source: `security.alert_candidates`
 - Contact point: `hayabusa-webhook`
 - Endpoint: `/alerts/default`

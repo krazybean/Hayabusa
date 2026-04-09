@@ -41,7 +41,7 @@ Build a local Docker Compose stack that proves:
 - Grafana provisions one dashboard
 - Grafana provisions alert rules for active detections
 - `alert-sink` receives Grafana webhook payloads
-- `./scripts/smoke-test.sh` proves ingest -> store -> detect
+- `./scripts/smoke-test.sh` proves ingest -> store -> detect -> alert
 
 ## Remaining small work
 
