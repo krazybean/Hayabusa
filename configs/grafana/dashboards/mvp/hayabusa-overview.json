@@ -195,6 +195,64 @@
       ],
       "title": "Recent Events",
       "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "hayabusa-clickhouse"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 17
+      },
+      "id": 4,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "hayabusa-clickhouse"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "SELECT endpoint_id, lane, status, minutes_since_last_seen, total_events, last_seen FROM security.endpoint_activity ORDER BY last_seen DESC LIMIT 25",
+          "refId": "A"
+        }
+      ],
+      "title": "Endpoint Activity",
+      "type": "table"
     }
   ],
   "refresh": "10s",
@@ -215,6 +273,6 @@
   "timezone": "",
   "title": "Hayabusa Overview",
   "uid": "hayabusa-overview",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }

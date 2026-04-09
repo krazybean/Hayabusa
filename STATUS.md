@@ -22,11 +22,15 @@ ingest -> store -> detect -> alert
 - Syslog ingest: TCP/UDP `1514` active
 - Canonical schema contract: `hayabusa.event.v1` active (`schema_version` anchor + contract doc)
 - Grafana dashboard: `Hayabusa Overview`
-- Grafana alert: `Hayabusa Security Failed Login Burst`
+- Grafana alerts: `Hayabusa Security Failed Login Burst`, `Hayabusa Windows Failed Logon Burst`
 - Detection engine MVP: active (`detection` service writes `security.alert_candidates`)
-- Active detection rule: `security_failed_login_burst`
+- Active detection rules: `security_failed_login_burst`, `windows_failed_logon_burst`
 - Alert routing MVP: Grafana posts firing alerts to local `alert-sink`
 - External forwarding: optional via `HAYABUSA_EXTERNAL_WEBHOOK_URL`
+- Windows first-host path: Fluent Bit `winevtlog` -> Vector forward lane (`24225`) -> `security.events`
+- Endpoint visibility: `security.endpoint_activity` view + `./scripts/endpoint-activity-report.sh`
+- Windows first-host validation runbook: `WINDOWS_REAL_HOST_RUNBOOK.md`
+- Lightweight demo surface: `docs/index.html` + `docs/styles.css`
 
 ## Keep
 
@@ -44,7 +48,7 @@ ingest -> store -> detect -> alert
 - Prometheus
 - ClickHouse Keeper
 - Fluent Bit runtime path
-- Windows collection and endpoint management
+- Windows fleet management beyond one real host
 - investigation workflows
 - compliance and parity work
 - extra rule packs and extra alert routes

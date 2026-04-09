@@ -18,6 +18,12 @@ sources:
     address: 0.0.0.0:1514
     mode: udp
 
+  ingest_fluent_windows_forward:
+    type: fluent
+    mode: tcp
+    address: 0.0.0.0:24225
+    connection_limit: 50
+
   buffered_events:
     type: nats
     connection_name: vector-buffer-reader
@@ -36,6 +42,7 @@ transforms:
       - demo_logs
       - ingest_syslog_tcp
       - ingest_syslog_udp
+      - ingest_fluent_windows_forward
     source: |
       if exists(.timestamp) {
         .ts = format_timestamp!(del(.timestamp), format: "%Y-%m-%d %H:%M:%S%.3f", timezone: "UTC")
@@ -50,6 +57,12 @@ transforms:
         .ingest_source = "vector-" + to_string!(.source_type)
       } else {
         .ingest_source = "vector-syslog"
+      }
+      if exists(.source_type) && to_string!(.source_type) == "fluent" {
+        .ingest_source = "vector-fluent"
+        if exists(.tag) && to_string!(.tag) == "windows.events" {
+          .ingest_source = "vector-windows-endpoint"
+        }
       }
 
       if !exists(.message) {
@@ -73,6 +86,20 @@ transforms:
       if exists(.facility)  { fields.facility  = to_string!(.facility) }
       if exists(.procid)    { fields.procid    = to_string!(.procid) }
       if exists(.msgid)     { fields.msgid     = to_string!(.msgid) }
+      if exists(.tag)       { fields.tag       = to_string!(.tag) }
+      if exists(.collector) { fields.collector = to_string!(.collector) }
+      if exists(.host_collection) { fields.host_collection = to_string!(.host_collection) }
+      if exists(.host)      { fields.host      = to_string!(.host) }
+      if exists(.Channel)   { fields.channel   = to_string!(.Channel) }
+      if exists(.channel)   { fields.channel   = to_string!(.channel) }
+      if exists(.Computer)  { fields.computer  = to_string!(.Computer) }
+      if exists(.computer)  { fields.computer  = to_string!(.computer) }
+      if exists(.EventID)   { fields.event_id  = to_string!(.EventID) }
+      if exists(.event_id)  { fields.event_id  = to_string!(.event_id) }
+      if exists(.Level)     { fields.level     = to_string!(.Level) }
+      if exists(.level)     { fields.level     = to_string!(.level) }
+      if exists(.ProviderName) { fields.provider_name = to_string!(.ProviderName) }
+      if exists(.provider_name) { fields.provider_name = to_string!(.provider_name) }
       if exists(.schema_version) { fields.schema_version = to_string!(.schema_version) }
       .fields = fields
 
@@ -82,6 +109,20 @@ transforms:
       del(.facility)
       del(.procid)
       del(.msgid)
+      del(.tag)
+      del(.collector)
+      del(.host_collection)
+      del(.host)
+      del(.Channel)
+      del(.channel)
+      del(.Computer)
+      del(.computer)
+      del(.EventID)
+      del(.event_id)
+      del(.Level)
+      del(.level)
+      del(.ProviderName)
+      del(.provider_name)
 
 sinks:
   nats_events_buffer:

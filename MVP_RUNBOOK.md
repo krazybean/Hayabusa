@@ -1,17 +1,59 @@
 # Hayabusa MVP Runbook
 
-This runbook is for one demonstration only:
+This runbook is for the current technical MVP only:
 
 ```text
 ingest -> store -> detect -> alert
 ```
 
-## Startup
+## 1. Safe Project Reset
 
-Use the pinned stack:
+This reset is scoped to the Hayabusa repo only.
+
+Stop and remove project containers, network, and volumes:
+
+```bash
+docker compose down -v --remove-orphans
+```
+
+Remove generated local state used by this repo:
+
+```bash
+rm -rf dist/windows-endpoints
+rm -rf secrets/windows-forward-tls
+find data/host-logs -maxdepth 1 -type f ! -name '.gitkeep' -delete
+```
+
+Confirm the environment is clean:
+
+```bash
+docker compose ps --all
+docker volume ls --filter label=com.docker.compose.project=hayabusa
+find dist -maxdepth 2 -type f | sort
+find data/host-logs -maxdepth 1 -type f ! -name '.gitkeep' | sort
+test ! -d secrets/windows-forward-tls && echo "windows-forward-tls cleared"
+```
+
+Expected:
+- `docker compose ps --all` shows no running Hayabusa containers
+- no Hayabusa Compose volumes remain
+- `dist/windows-endpoints` is empty or absent
+- only `data/host-logs/.gitkeep` remains under `data/host-logs`
+- `secrets/windows-forward-tls` is absent
+
+If old volumes from a pre-MVP stack still appear, remove them explicitly:
+
+```bash
+docker volume rm hayabusa_keeper_data hayabusa_prometheus_data
+```
+
+## 2. Clean Rebuild
+
+Start the pinned stack:
 
 ```bash
 docker compose up -d --remove-orphans
+./scripts/apply-clickhouse-migrations.sh
 docker compose ps
 ```
 
@@ -19,11 +61,11 @@ Expected:
 - `clickhouse`, `nats`, `vector`, `grafana`, `detection`, and `alert-sink` are `running`
 - `nats-init` exits with code `0`
 
-Note:
-- on first boot, Grafana may take an extra minute to download `grafana-clickhouse-datasource@4.14.0`
-- on first boot, Grafana needs outbound network access to fetch that pinned plugin unless the image cache already has it
+First boot note:
+- Grafana downloads `grafana-clickhouse-datasource@4.14.0`
+- a clean machine therefore needs outbound network access for that step unless the plugin is already cached
 
-## End-to-End Validation
+## 3. End-to-End MVP Validation
 
 Run:
 
@@ -50,9 +92,9 @@ Smoke test passed.
 Note:
 - after a fresh restart, the alert step can take a full Grafana evaluation cycle before the webhook POST appears
 
-## Manual Validation
+## 4. Manual Checks
 
-Check stored events:
+Stored events:
 
 ```bash
 curl -s http://localhost:8123/ --data-binary \
@@ -61,9 +103,9 @@ curl -s http://localhost:8123/ --data-binary \
 
 Expected:
 - recent rows exist
-- `ingest_source` shows `vector-demo_logs` or `vector-syslog`
+- `ingest_source` includes `vector-demo_logs` or `vector-syslog`
 
-Check detection output:
+Detection output:
 
 ```bash
 curl -s http://localhost:8123/ --data-binary \
@@ -74,7 +116,7 @@ Expected:
 - recent rows exist
 - `rule_id` includes `security_failed_login_burst`
 
-Check webhook delivery:
+Webhook delivery:
 
 ```bash
 docker compose logs --tail=120 alert-sink
@@ -85,41 +127,25 @@ Expected:
 - payload includes `security_failed_login_burst`
 - after the alert window closes, a second payload appears with `status":"resolved"`
 
-## Alert Trigger Shortcut
+## 5. Deferred Scope
 
-If you want to trigger the path manually without the full smoke test:
-
-```bash
-for i in 1 2 3 4 5 6; do
-  printf '<134>1 %s authhost sshd 10%d ID47 - Failed password for invalid user root from 10.0.0.%d port 22 ssh2\n' "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" "$i" "$i" \
-    | nc -u -w1 127.0.0.1 1514
-  sleep 1
-done
-```
-
-Then watch:
-
-```bash
-docker compose logs --tail=120 alert-sink
-```
-
-## Deferred Until Post-MVP
-
-These are intentionally out of scope for the demo stack:
+These are intentionally outside the current demo:
 
 - Prometheus
 - ClickHouse Keeper
-- Fluent Bit runtime path
-- Windows endpoint collection and endpoint management
-- investigation workflows
-- compliance or reporting work
-- extra detection packs
-- extra alert routes beyond the local webhook sink
-- any external forwarding requirement
+- auth or user accounts
+- API layer
+- custom frontend
+- clustering or HA
+- compliance/reporting
+- endpoint fleet management
+- external alert routing beyond the local webhook sink
 
-## Most Likely Issues
+## 6. Most Likely Issues
 
 - Grafana is healthy late on first boot:
-  wait for the pinned ClickHouse plugin download to finish, then rerun `./scripts/smoke-test.sh`
+  wait for the pinned plugin download to finish, then rerun `./scripts/smoke-test.sh`
 - `docker compose` warns about orphan containers:
-  run `docker compose up -d --remove-orphans`
+  rerun with `docker compose up -d --remove-orphans`
+- old generated files still exist after reset:
+  rerun the three cleanup commands from section 1 and confirm the directory checks are empty
