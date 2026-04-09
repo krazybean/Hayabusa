@@ -36,9 +36,9 @@ query_scalar() {
 
 wait_for_clickhouse
 
-printf "[%s] Applying ClickHouse event schema migrations...\n" "$(timestamp)"
+printf "[%s] Applying ClickHouse MVP migrations...\n" "$(timestamp)"
 run_sql "ALTER TABLE security.events ADD COLUMN IF NOT EXISTS schema_version LowCardinality(String) DEFAULT 'hayabusa.event.v1' AFTER platform"
-run_sql "CREATE OR REPLACE VIEW security.endpoint_activity AS SELECT endpoint_id, lane, first_seen, last_seen, total_events, dateDiff('minute', last_seen, now()) AS minutes_since_last_seen, multiIf(dateDiff('minute', last_seen, now()) <= 15, 'active', dateDiff('minute', last_seen, now()) <= 60, 'idle', 'stale') AS status FROM (SELECT coalesce(nullIf(fields['computer'], ''), nullIf(fields['hostname'], ''), nullIf(fields['host'], ''), 'unknown') AS endpoint_id, ingest_source AS lane, min(ts) AS first_seen, max(ts) AS last_seen, count() AS total_events FROM security.events GROUP BY endpoint_id, lane) WHERE endpoint_id != 'unknown'"
+run_sql "CREATE TABLE IF NOT EXISTS security.alert_candidates (ts DateTime64(3, 'UTC') DEFAULT now64(3), rule_id String, rule_name String, severity LowCardinality(String), hits UInt64, threshold_op LowCardinality(String), threshold_value UInt64, query String, details String) ENGINE = MergeTree() PARTITION BY toYYYYMM(ts) ORDER BY (ts, rule_id) TTL ts + INTERVAL 30 DAY"
 
 column_exists="$(query_scalar "SELECT count() FROM system.columns WHERE database = 'security' AND table = 'events' AND name = 'schema_version' FORMAT TabSeparated")"
 if [[ "${column_exists}" != "1" ]]; then
@@ -46,10 +46,10 @@ if [[ "${column_exists}" != "1" ]]; then
   exit 1
 fi
 
-view_exists="$(query_scalar "SELECT count() FROM system.tables WHERE database = 'security' AND name = 'endpoint_activity' FORMAT TabSeparated")"
-if [[ "${view_exists}" != "1" ]]; then
-  printf "[%s] ERROR: endpoint_activity view missing after migration\n" "$(timestamp)" >&2
+alert_candidates_exists="$(query_scalar "SELECT count() FROM system.tables WHERE database = 'security' AND name = 'alert_candidates' FORMAT TabSeparated")"
+if [[ "${alert_candidates_exists}" != "1" ]]; then
+  printf "[%s] ERROR: alert_candidates table missing after migration\n" "$(timestamp)" >&2
   exit 1
 fi
 
-printf "[%s] Migration complete: security.events.schema_version + security.endpoint_activity ready\n" "$(timestamp)"
+printf "[%s] Migration complete: security.events.schema_version + security.alert_candidates ready\n" "$(timestamp)"

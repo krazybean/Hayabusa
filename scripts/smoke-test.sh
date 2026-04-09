@@ -1,21 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "${ROOT_DIR}"
-
-TIMEOUT_SECONDS="${SMOKE_TIMEOUT_SECONDS:-120}"
-MAX_EVENTS_BYTES="${SMOKE_MAX_EVENTS_BYTES:-1073741824}"
+TIMEOUT_SECONDS="${SMOKE_TIMEOUT_SECONDS:-180}"
+SLEEP_SECONDS=2
 NATS_STREAM_NAME="${SMOKE_NATS_STREAM_NAME:-HAYABUSA_EVENTS}"
 NATS_CONSUMER_NAME="${SMOKE_NATS_CONSUMER_NAME:-VECTOR_CLICKHOUSE_WRITER}"
-NATS_STREAM_SUBJECT_GLOB="${SMOKE_NATS_STREAM_SUBJECT_GLOB:-hayabusa.events.>}"
-NATS_URL="${SMOKE_NATS_URL:-nats://nats:4222}"
-FLUENT_INGEST_SOURCE="${SMOKE_FLUENT_INGEST_SOURCE:-vector-fluent}"
-FLUENT_HOST_LOG_FILE="${SMOKE_FLUENT_HOST_LOG_FILE:-${ROOT_DIR}/data/host-logs/linux-auth.log}"
-WINDOWS_INGEST_SOURCE="${SMOKE_WINDOWS_INGEST_SOURCE:-vector-windows-endpoint}"
-WINDOWS_SIM_LOG_FILE="${SMOKE_WINDOWS_SIM_LOG_FILE:-${ROOT_DIR}/data/host-logs/windows-events.log}"
-SKIP_WINDOWS_LANE_CHECK="${SMOKE_SKIP_WINDOWS_LANE_CHECK:-false}"
-SLEEP_SECONDS=2
+ALERT_POLL_ATTEMPTS="${SMOKE_ALERT_POLL_ATTEMPTS:-40}"
 
 timestamp() {
   date +"%H:%M:%S"
@@ -45,44 +35,9 @@ wait_for_http() {
   return 1
 }
 
-wait_for_keeper() {
-  local elapsed=0
-  printf "[%s] Waiting for ClickHouse Keeper client check\n" "$(timestamp)"
-
-  while (( elapsed < TIMEOUT_SECONDS )); do
-    if docker compose exec -T clickhouse-keeper \
-      clickhouse-keeper-client --host localhost --port 9181 ls / >/dev/null 2>&1; then
-      printf "[%s] OK: ClickHouse Keeper\n" "$(timestamp)"
-      return 0
-    fi
-    sleep "${SLEEP_SECONDS}"
-    elapsed=$((elapsed + SLEEP_SECONDS))
-  done
-
-  printf "[%s] ERROR: ClickHouse Keeper did not become ready within %ss\n" "$(timestamp)" "${TIMEOUT_SECONDS}" >&2
-  return 1
-}
-
 run_nats_cli() {
   docker compose run --rm --no-deps nats-init \
-    nats --server "${NATS_URL}" "$@"
-}
-
-wait_for_nats() {
-  local elapsed=0
-  printf "[%s] Waiting for NATS JetStream CLI checks\n" "$(timestamp)"
-
-  while (( elapsed < TIMEOUT_SECONDS )); do
-    if run_nats_cli account info >/dev/null 2>&1; then
-      printf "[%s] OK: NATS JetStream CLI reachable\n" "$(timestamp)"
-      return 0
-    fi
-    sleep "${SLEEP_SECONDS}"
-    elapsed=$((elapsed + SLEEP_SECONDS))
-  done
-
-  printf "[%s] ERROR: NATS JetStream did not become ready within %ss\n" "$(timestamp)" "${TIMEOUT_SECONDS}" >&2
-  return 1
+    nats --server nats://nats:4222 "$@"
 }
 
 wait_for_detection() {
@@ -102,135 +57,95 @@ wait_for_detection() {
   return 1
 }
 
-query_clickhouse_count() {
-  curl -fsS "http://localhost:8123/" \
-    --data-binary "SELECT count() FROM security.events FORMAT TabSeparated" | tr -d '\r\n'
+query_scalar() {
+  local sql="$1"
+  curl -fsS "http://localhost:8123/" --data-binary "${sql}" | tr -d '\r\n'
 }
 
-query_clickhouse_bytes() {
-  curl -fsS "http://localhost:8123/" \
-    --data-binary "SELECT toUInt64(ifNull(sum(bytes_on_disk), 0)) FROM system.parts WHERE active AND database = 'security' AND table = 'events' FORMAT TabSeparated" | tr -d '\r\n'
+count_alert_sink_rule_hits() {
+  docker compose logs alert-sink 2>/dev/null \
+    | awk '/payload path=\/alerts\/default/ && /security_failed_login_burst/ { count += 1 } END { print count + 0 }'
 }
 
-query_alert_candidates_table_exists() {
-  curl -fsS "http://localhost:8123/" \
-    --data-binary "SELECT count() FROM system.tables WHERE database = 'security' AND name = 'alert_candidates' FORMAT TabSeparated" | tr -d '\r\n'
+send_failed_login_burst() {
+  local i
+  for i in 1 2 3 4 5 6; do
+    printf '<134>1 %s authhost sshd 10%d ID47 - Failed password for invalid user root from 10.0.0.%d port 22 ssh2\n' "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" "${i}" "${i}" \
+      | nc -u -w1 127.0.0.1 1514
+    sleep 1
+  done
 }
 
-query_endpoint_activity_view_exists() {
-  curl -fsS "http://localhost:8123/" \
-    --data-binary "SELECT count() FROM system.tables WHERE database = 'security' AND name = 'endpoint_activity' FORMAT TabSeparated" | tr -d '\r\n'
-}
-
-query_ingest_source_count() {
-  local ingest_source="$1"
-  curl -fsS "http://localhost:8123/" \
-    --data-binary "SELECT count() FROM security.events WHERE ingest_source = '${ingest_source}' FORMAT TabSeparated" | tr -d '\r\n'
-}
-
-query_nats_stream_info() {
-  run_nats_cli stream info "${NATS_STREAM_NAME}"
-}
-
-echo "Running Hayabusa component smoke test..."
-docker compose ps
+echo "Running Hayabusa MVP smoke test..."
 
 wait_for_http "ClickHouse" "http://localhost:8123/ping" "ok"
-wait_for_keeper
-wait_for_nats
-wait_for_http "Vector API" "http://localhost:8686/health"
-wait_for_http "Prometheus" "http://localhost:9090/-/healthy" "healthy"
+wait_for_http "Vector" "http://localhost:8686/health"
+wait_for_http "Alert Router" "http://localhost:5678/health" "\"ok\":true"
 wait_for_http "Grafana" "http://localhost:3000/api/health" "\"database\"[[:space:]]*:[[:space:]]*\"ok\""
 wait_for_detection
 
-echo "Validating transport path (Vector -> NATS JetStream -> ClickHouse)..."
-nats_stream_info="$(query_nats_stream_info)"
-if grep -q "Stream ${NATS_STREAM_NAME}" <<<"${nats_stream_info}"; then
+stream_info="$(run_nats_cli stream info "${NATS_STREAM_NAME}")"
+if grep -q "Stream ${NATS_STREAM_NAME}" <<<"${stream_info}"; then
   printf "[%s] OK: JetStream stream present (%s)\n" "$(timestamp)" "${NATS_STREAM_NAME}"
 else
   printf "[%s] ERROR: JetStream stream missing (%s)\n" "$(timestamp)" "${NATS_STREAM_NAME}" >&2
   exit 1
 fi
 
-nats_consumer_info="$(run_nats_cli consumer info "${NATS_STREAM_NAME}" "${NATS_CONSUMER_NAME}")"
-if grep -q "Name: ${NATS_CONSUMER_NAME}" <<<"${nats_consumer_info}"; then
+consumer_info="$(run_nats_cli consumer info "${NATS_STREAM_NAME}" "${NATS_CONSUMER_NAME}")"
+if grep -q "Name: ${NATS_CONSUMER_NAME}" <<<"${consumer_info}"; then
   printf "[%s] OK: JetStream consumer present (%s)\n" "$(timestamp)" "${NATS_CONSUMER_NAME}"
 else
   printf "[%s] ERROR: JetStream consumer missing (%s)\n" "$(timestamp)" "${NATS_CONSUMER_NAME}" >&2
   exit 1
 fi
 
-if grep -Fq "Subjects: ${NATS_STREAM_SUBJECT_GLOB}" <<<"${nats_stream_info}"; then
-  printf "[%s] OK: JetStream stream subject configured (%s)\n" "$(timestamp)" "${NATS_STREAM_SUBJECT_GLOB}"
-else
-  printf "[%s] ERROR: JetStream stream subject not found (%s)\n" "$(timestamp)" "${NATS_STREAM_SUBJECT_GLOB}" >&2
-  exit 1
-fi
-
-if docker compose ps --services --status running | grep -q '^fluent-bit$'; then
-  fluent_before="$(query_ingest_source_count "${FLUENT_INGEST_SOURCE}")"
-  ./scripts/generate-host-logs.sh "${FLUENT_HOST_LOG_FILE}" >/dev/null
-  sleep 3
-  fluent_after="$(query_ingest_source_count "${FLUENT_INGEST_SOURCE}")"
-
-  if [[ "${fluent_after}" =~ ^[0-9]+$ ]] && [[ "${fluent_before}" =~ ^[0-9]+$ ]] && (( fluent_after > fluent_before )); then
-    printf "[%s] OK: Fluent Bit host log flow increased %s events (%s -> %s)\n" "$(timestamp)" "${FLUENT_INGEST_SOURCE}" "${fluent_before}" "${fluent_after}"
-  else
-    printf "[%s] ERROR: Fluent Bit host log flow did not increase %s events (%s -> %s)\n" "$(timestamp)" "${FLUENT_INGEST_SOURCE}" "${fluent_before}" "${fluent_after}" >&2
-    exit 1
-  fi
-
-  if [[ "${SKIP_WINDOWS_LANE_CHECK}" == "true" ]]; then
-    printf "[%s] INFO: skipping Windows lane flow check (SMOKE_SKIP_WINDOWS_LANE_CHECK=true)\n" "$(timestamp)"
-  else
-    windows_before="$(query_ingest_source_count "${WINDOWS_INGEST_SOURCE}")"
-    ./scripts/generate-windows-events.sh "${WINDOWS_SIM_LOG_FILE}" >/dev/null
-    sleep 3
-    windows_after="$(query_ingest_source_count "${WINDOWS_INGEST_SOURCE}")"
-
-    if [[ "${windows_after}" =~ ^[0-9]+$ ]] && [[ "${windows_before}" =~ ^[0-9]+$ ]] && (( windows_after > windows_before )); then
-      printf "[%s] OK: Windows endpoint lane increased %s events (%s -> %s)\n" "$(timestamp)" "${WINDOWS_INGEST_SOURCE}" "${windows_before}" "${windows_after}"
-    else
-      printf "[%s] ERROR: Windows endpoint lane did not increase %s events (%s -> %s)\n" "$(timestamp)" "${WINDOWS_INGEST_SOURCE}" "${windows_before}" "${windows_after}" >&2
-      exit 1
-    fi
-  fi
-else
-  printf "[%s] INFO: fluent-bit service not running; skipping collector path check\n" "$(timestamp)"
-fi
-
-before_count="$(query_clickhouse_count)"
+events_before="$(query_scalar "SELECT count() FROM security.events FORMAT TabSeparated")"
+alert_hits_before="$(count_alert_sink_rule_hits)"
+send_failed_login_burst
 sleep 5
-after_count="$(query_clickhouse_count)"
+events_after="$(query_scalar "SELECT count() FROM security.events FORMAT TabSeparated")"
 
-if [[ "${after_count}" =~ ^[0-9]+$ ]] && [[ "${before_count}" =~ ^[0-9]+$ ]] && (( after_count > before_count )); then
-  printf "[%s] OK: security.events count increased (%s -> %s)\n" "$(timestamp)" "${before_count}" "${after_count}"
+if [[ "${events_before}" =~ ^[0-9]+$ ]] && [[ "${events_after}" =~ ^[0-9]+$ ]] && (( events_after > events_before )); then
+  printf "[%s] OK: events ingested into ClickHouse (%s -> %s)\n" "$(timestamp)" "${events_before}" "${events_after}"
 else
-  printf "[%s] ERROR: security.events count did not increase (%s -> %s)\n" "$(timestamp)" "${before_count}" "${after_count}" >&2
+  printf "[%s] ERROR: events did not increase in ClickHouse (%s -> %s)\n" "$(timestamp)" "${events_before}" "${events_after}" >&2
   exit 1
 fi
 
-alert_candidates_table_exists="$(query_alert_candidates_table_exists)"
-if [[ "${alert_candidates_table_exists}" == "1" ]]; then
-  printf "[%s] OK: security.alert_candidates table exists\n" "$(timestamp)"
+candidate_count="0"
+attempt=0
+until (( attempt >= 20 )); do
+  candidate_count="$(query_scalar "SELECT count() FROM security.alert_candidates WHERE rule_id = 'security_failed_login_burst' AND ts > now() - INTERVAL 5 MINUTE FORMAT TabSeparated")"
+  if [[ "${candidate_count}" =~ ^[0-9]+$ ]] && (( candidate_count > 0 )); then
+    break
+  fi
+  sleep 3
+  attempt=$((attempt + 1))
+done
+
+if [[ "${candidate_count}" =~ ^[0-9]+$ ]] && (( candidate_count > 0 )); then
+  printf "[%s] OK: detection wrote alert candidate rows (%s)\n" "$(timestamp)" "${candidate_count}"
 else
-  printf "[%s] ERROR: security.alert_candidates table missing\n" "$(timestamp)" >&2
+  printf "[%s] ERROR: detection did not write alert candidates\n" "$(timestamp)" >&2
   exit 1
 fi
 
-endpoint_activity_view_exists="$(query_endpoint_activity_view_exists)"
-if [[ "${endpoint_activity_view_exists}" == "1" ]]; then
-  printf "[%s] OK: security.endpoint_activity view exists\n" "$(timestamp)"
-else
-  printf "[%s] ERROR: security.endpoint_activity view missing\n" "$(timestamp)" >&2
-  exit 1
-fi
+alert_hits_after="${alert_hits_before}"
+attempt=0
+until (( attempt >= ALERT_POLL_ATTEMPTS )); do
+  alert_hits_after="$(count_alert_sink_rule_hits)"
+  if [[ "${alert_hits_after}" =~ ^[0-9]+$ ]] && [[ "${alert_hits_before}" =~ ^[0-9]+$ ]] && (( alert_hits_after > alert_hits_before )); then
+    break
+  fi
+  sleep 3
+  attempt=$((attempt + 1))
+done
 
-events_bytes="$(query_clickhouse_bytes)"
-if [[ "${events_bytes}" =~ ^[0-9]+$ ]] && (( events_bytes <= MAX_EVENTS_BYTES )); then
-  printf "[%s] OK: security.events bytes within budget (%s <= %s)\n" "$(timestamp)" "${events_bytes}" "${MAX_EVENTS_BYTES}"
+if [[ "${alert_hits_after}" =~ ^[0-9]+$ ]] && [[ "${alert_hits_before}" =~ ^[0-9]+$ ]] && (( alert_hits_after > alert_hits_before )); then
+  printf "[%s] OK: Grafana sent webhook alert to alert-sink (%s -> %s)\n" "$(timestamp)" "${alert_hits_before}" "${alert_hits_after}"
 else
-  printf "[%s] ERROR: security.events bytes over budget (%s > %s)\n" "$(timestamp)" "${events_bytes}" "${MAX_EVENTS_BYTES}" >&2
+  printf "[%s] ERROR: Grafana webhook alert was not observed in alert-sink logs (%s -> %s)\n" "$(timestamp)" "${alert_hits_before}" "${alert_hits_after}" >&2
   exit 1
 fi
 

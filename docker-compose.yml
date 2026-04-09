@@ -1,7 +1,6 @@
 services:
-  # Columnar event store (single-node for local MVP).
   clickhouse:
-    image: clickhouse/clickhouse-server:latest
+    image: clickhouse/clickhouse-server:26.2.5.45@sha256:8f18d3c681eb07d5f28ac3fd6e1cc4789cb1cb4f9823d52ba8026df49960184b
     container_name: clickhouse
     ports:
       - "8123:8123"
@@ -22,26 +21,8 @@ services:
       retries: 10
     restart: unless-stopped
 
-  # Coordination service reserved for future ClickHouse clustering.
-  clickhouse-keeper:
-    image: clickhouse/clickhouse-keeper:latest
-    container_name: clickhouse-keeper
-    ports:
-      - "9181:9181"
-      - "9234:9234"
-    volumes:
-      - keeper_data:/var/lib/clickhouse-keeper
-      - ./configs/clickhouse/keeper.xml:/etc/clickhouse-keeper/keeper_config.xml:ro
-    healthcheck:
-      test: ["CMD", "clickhouse-keeper-client", "--host", "localhost", "--port", "9181", "ls", "/"]
-      interval: 20s
-      timeout: 5s
-      retries: 10
-    restart: unless-stopped
-
-  # Transport/buffer layer (active in ingest flow).
   nats:
-    image: nats:latest
+    image: nats:2.12.6@sha256:24e20d33a7214208b1cb699c2e4ebfbed32f7a30b41c18b36be75f019a96616c
     container_name: nats
     command: ["-js", "-m", "8222"]
     ports:
@@ -57,9 +38,8 @@ services:
       retries: 10
     restart: unless-stopped
 
-  # JetStream bootstrap (idempotent stream + durable consumer setup).
   nats-init:
-    image: natsio/nats-box:latest
+    image: natsio/nats-box:0.3.1@sha256:fbdf67cb49333afc50e2003c6857845d1ed9cf822d2b886cc5658ebf3c754b07
     container_name: nats-init
     command: ["/bin/sh", "/app/bootstrap-jetstream.sh"]
     environment:
@@ -76,19 +56,15 @@ services:
         condition: service_healthy
     restart: "no"
 
-  # Ingestion + normalization pipeline (normalize -> JetStream -> store).
   vector:
-    image: timberio/vector:latest-alpine
+    image: timberio/vector:0.54.0-alpine@sha256:bbc59e9d5a6cf432f11d912911a6ac63784527d978626cff783152c2bb2ee1a9
     container_name: vector
     ports:
       - "8686:8686"
       - "1514:1514"
       - "1514:1514/udp"
-      - "24224:24224"
-      - "24225:24225"
     volumes:
       - ./configs/vector/vector.yaml:/etc/vector/vector.yaml:ro
-      - ./secrets/windows-forward-tls:/etc/vector/tls/windows-forward:ro
     depends_on:
       clickhouse:
         condition: service_healthy
@@ -104,56 +80,21 @@ services:
       retries: 10
     restart: unless-stopped
 
-  # Host-side collector (Fluent Bit -> Vector forward input).
-  fluent-bit:
-    image: fluent/fluent-bit:latest
-    container_name: fluent-bit
-    command: ["/fluent-bit/bin/fluent-bit", "-c", "/fluent-bit/etc/fluent-bit.conf"]
-    volumes:
-      - ./configs/fluent-bit/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro
-      - ./data/host-logs:/var/log/hayabusa-host
-      - ./secrets/windows-forward-tls:/etc/fluent-bit/tls/windows-forward:ro
-    depends_on:
-      vector:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "/fluent-bit/bin/fluent-bit", "--version"]
-      interval: 20s
-      timeout: 5s
-      retries: 10
-    restart: unless-stopped
-
-  # Metrics collection for platform observability.
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy"]
-      interval: 20s
-      timeout: 5s
-      retries: 10
-    restart: unless-stopped
-
-  # Dashboard and visualization layer.
   grafana:
-    image: grafana/grafana-oss:latest
+    image: grafana/grafana-oss:12.4.2@sha256:83749231c3835e390a3144e5e940203e42b9589761f20ef3169c716e734ad505
     container_name: grafana
     ports:
       - "3000:3000"
     environment:
-      # Install ClickHouse datasource plugin so log/event queries can be built in Grafana UI.
-      GF_PLUGINS_PREINSTALL: grafana-clickhouse-datasource
+      GF_PLUGINS_PREINSTALL: grafana-clickhouse-datasource@4.14.0
     volumes:
       - grafana_data:/var/lib/grafana
       - ./configs/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./configs/grafana/dashboards:/var/lib/grafana/dashboards:ro
     depends_on:
-      prometheus:
+      clickhouse:
+        condition: service_healthy
+      alert-sink:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
@@ -162,9 +103,8 @@ services:
       retries: 10
     restart: unless-stopped
 
-  # SQL-first detection engine (MVP).
   detection:
-    image: curlimages/curl:latest
+    image: curlimages/curl:8.18.0@sha256:d94d07ba9e7d6de898b6d96c1a072f6f8266c687af78a74f380087a0addf5d17
     container_name: detection
     command: ["/bin/sh", "/app/run.sh"]
     environment:
@@ -173,7 +113,7 @@ services:
       DETECTION_POLL_SECONDS: "30"
     volumes:
       - ./services/detection/run.sh:/app/run.sh:ro
-      - ./configs/rules/detections:/etc/hayabusa/rules:ro
+      - ./configs/rules/mvp:/etc/hayabusa/rules:ro
     depends_on:
       clickhouse:
         condition: service_healthy
@@ -186,9 +126,8 @@ services:
       retries: 10
     restart: unless-stopped
 
-  # Alert routing sink (local visibility + optional external forwarding).
   alert-sink:
-    image: node:22-alpine
+    image: node:22.22.2-alpine
     container_name: alert-sink
     command: ["node", "/app/server.js"]
     ports:
@@ -198,21 +137,6 @@ services:
       ALERT_ROUTER_EXTERNAL_WEBHOOK_URL: ${HAYABUSA_EXTERNAL_WEBHOOK_URL:-}
       ALERT_ROUTER_EXTERNAL_WEBHOOK_TOKEN: ${HAYABUSA_EXTERNAL_WEBHOOK_TOKEN:-}
       ALERT_ROUTER_EXTERNAL_WEBHOOK_TOKEN_FILE: ${HAYABUSA_EXTERNAL_WEBHOOK_TOKEN_FILE:-}
-      ALERT_ROUTER_EXTERNAL_WEBHOOK_DEFAULT_URL: ${HAYABUSA_EXTERNAL_WEBHOOK_DEFAULT_URL:-}
-      ALERT_ROUTER_EXTERNAL_WEBHOOK_DEFAULT_TOKEN: ${HAYABUSA_EXTERNAL_WEBHOOK_DEFAULT_TOKEN:-}
-      ALERT_ROUTER_EXTERNAL_WEBHOOK_DEFAULT_TOKEN_FILE: ${HAYABUSA_EXTERNAL_WEBHOOK_DEFAULT_TOKEN_FILE:-}
-      ALERT_ROUTER_EXTERNAL_WEBHOOK_DETECTION_URL: ${HAYABUSA_EXTERNAL_WEBHOOK_DETECTION_URL:-}
-      ALERT_ROUTER_EXTERNAL_WEBHOOK_DETECTION_TOKEN: ${HAYABUSA_EXTERNAL_WEBHOOK_DETECTION_TOKEN:-}
-      ALERT_ROUTER_EXTERNAL_WEBHOOK_DETECTION_TOKEN_FILE: ${HAYABUSA_EXTERNAL_WEBHOOK_DETECTION_TOKEN_FILE:-}
-      ALERT_ROUTER_EXTERNAL_WEBHOOK_CHAT_URL: ${HAYABUSA_EXTERNAL_WEBHOOK_CHAT_URL:-}
-      ALERT_ROUTER_EXTERNAL_WEBHOOK_CHAT_TOKEN: ${HAYABUSA_EXTERNAL_WEBHOOK_CHAT_TOKEN:-}
-      ALERT_ROUTER_EXTERNAL_WEBHOOK_CHAT_TOKEN_FILE: ${HAYABUSA_EXTERNAL_WEBHOOK_CHAT_TOKEN_FILE:-}
-      ALERT_ROUTER_EXTERNAL_WEBHOOK_ONCALL_URL: ${HAYABUSA_EXTERNAL_WEBHOOK_ONCALL_URL:-}
-      ALERT_ROUTER_EXTERNAL_WEBHOOK_ONCALL_TOKEN: ${HAYABUSA_EXTERNAL_WEBHOOK_ONCALL_TOKEN:-}
-      ALERT_ROUTER_EXTERNAL_WEBHOOK_ONCALL_TOKEN_FILE: ${HAYABUSA_EXTERNAL_WEBHOOK_ONCALL_TOKEN_FILE:-}
-      ALERT_ROUTER_EXTERNAL_WEBHOOK_EMAIL_URL: ${HAYABUSA_EXTERNAL_WEBHOOK_EMAIL_URL:-}
-      ALERT_ROUTER_EXTERNAL_WEBHOOK_EMAIL_TOKEN: ${HAYABUSA_EXTERNAL_WEBHOOK_EMAIL_TOKEN:-}
-      ALERT_ROUTER_EXTERNAL_WEBHOOK_EMAIL_TOKEN_FILE: ${HAYABUSA_EXTERNAL_WEBHOOK_EMAIL_TOKEN_FILE:-}
       ALERT_ROUTER_FAIL_ON_FORWARD_ERROR: ${HAYABUSA_ALERT_ROUTER_FAIL_ON_FORWARD_ERROR:-false}
       ALERT_ROUTER_FORWARD_TIMEOUT_MS: ${HAYABUSA_ALERT_ROUTER_FORWARD_TIMEOUT_MS:-5000}
       ALERT_ROUTER_FORWARD_RETRY_MAX_ATTEMPTS: ${HAYABUSA_ALERT_ROUTER_FORWARD_RETRY_MAX_ATTEMPTS:-3}
@@ -229,7 +153,5 @@ services:
 
 volumes:
   clickhouse_data:
-  keeper_data:
   nats_data:
-  prometheus_data:
   grafana_data:

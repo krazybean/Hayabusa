@@ -28,7 +28,7 @@ anchors:
   - name: ingest_source
     type: LowCardinality(String)
     required: true
-    description: Normalized source lane (for example vector-windows-endpoint).
+    description: Normalized source lane (for example vector-syslog).
   - name: message
     type: String
     required: true
