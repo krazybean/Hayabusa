@@ -6,6 +6,22 @@ This runbook is for the current technical MVP only:
 ingest -> store -> detect -> alert
 ```
 
+## 0. Daily Dev Workflow
+
+For normal coding or testing, bring the stack up before work:
+
+```bash
+./scripts/dev-up.sh
+```
+
+When you are done, tear it down without deleting volumes:
+
+```bash
+./scripts/dev-down.sh
+```
+
+Use the full reset below only when you want to wipe project containers, volumes, and generated local state.
+
 ## 1. Safe Project Reset
 
 This reset is scoped to the Hayabusa repo only.

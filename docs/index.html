@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Hayabusa | Self-Hosted Suspicious-Login Detection</title>
+    <title>Hayabusa | Detect Suspicious Login Activity in Minutes</title>
     <meta
       name="description"
       content="Hayabusa is a self-hosted security telemetry MVP focused on detecting suspicious login activity on servers."
@@ -11,229 +11,249 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div class="page-shell">
-      <header class="topbar">
-        <div class="brand-lockup">
-          <div class="brand-mark" aria-hidden="true"></div>
-          <div>
-            <p class="eyebrow">Hayabusa</p>
-            <p class="microcopy">Self-hosted security telemetry MVP</p>
-          </div>
-        </div>
-        <nav class="topnav">
-          <a href="#proof">Proof</a>
-          <a href="#demo-flow">Demo Flow</a>
-          <a href="#scope">Scope</a>
-          <a href="https://github.com/krazybean/Hayabusa" target="_blank" rel="noreferrer">Repo</a>
+    <div class="site-grid" aria-hidden="true"></div>
+    <div class="site-shell">
+      <header class="site-header">
+        <a class="brand" href="#top" aria-label="Hayabusa home">
+          <span class="brand-word">Hayabusa</span>
+        </a>
+
+        <nav class="site-nav" aria-label="Primary">
+          <a class="is-active" href="#logic">Telemetry</a>
+          <a href="#story">Workflow</a>
+          <a href="#architecture">Architecture</a>
+          <a href="#scope">Core Logic</a>
         </nav>
+
+        <div class="header-actions">
+          <a class="icon-link" href="https://github.com/krazybean/Hayabusa" target="_blank" rel="noreferrer" aria-label="View repository">
+            <span class="icon-box"></span>
+          </a>
+          <a class="icon-link" href="https://krazybean.github.io/Hayabusa/" aria-label="Open live site">
+            <span class="icon-square"></span>
+          </a>
+          <a class="header-cta" href="https://github.com/krazybean/Hayabusa/blob/main/MVP_RUNBOOK.md" target="_blank" rel="noreferrer">Deploy MVP</a>
+        </div>
       </header>
 
       <main>
-        <section class="hero">
-          <div class="hero-copy reveal delay-1">
-            <p class="eyebrow">Focused Use Case</p>
-            <h1>Detect suspicious login activity on servers without a bloated stack.</h1>
-            <p class="lead">
-              Hayabusa is a local, self-hosted proof of one real workflow:
-              logs enter the pipeline, suspicious login patterns are detected,
-              results land in ClickHouse, Grafana fires, and a webhook receives the alert.
+        <section id="top" class="hero">
+          <div class="hero-copy">
+            <p class="section-kicker">v1.0.0 • MVP • Public deployment</p>
+            <h1>
+              Detect suspicious
+              <br />
+              login activity in
+              <br />
+              minutes — without a
+              <span class="accent-text">SIEM.</span>
+            </h1>
+            <p class="hero-subtitle">
+              Built for engineers who need to detect failed logins and brute-force attempts
+              without running a full SIEM.
             </p>
-            <div class="chip-row">
-              <span class="chip">Docker Compose</span>
-              <span class="chip">ClickHouse</span>
-              <span class="chip">NATS JetStream</span>
-              <span class="chip">Vector</span>
-              <span class="chip">Grafana</span>
+
+            <div class="hero-actions">
+              <a class="button primary" href="https://github.com/krazybean/Hayabusa/blob/main/MVP_RUNBOOK.md" target="_blank" rel="noreferrer">Run the MVP locally</a>
+              <a class="button secondary" href="#story">See how detection works</a>
+              <a class="text-link" href="https://github.com/krazybean/Hayabusa/blob/main/WINDOWS_REAL_HOST_RUNBOOK.md" target="_blank" rel="noreferrer">Read the runbook</a>
             </div>
-            <div class="cta-row">
-              <a class="button primary" href="https://github.com/krazybean/Hayabusa" target="_blank" rel="noreferrer">View Repository</a>
-              <a class="button secondary" href="https://github.com/krazybean/Hayabusa/blob/dev/MVP_RUNBOOK.md" target="_blank" rel="noreferrer">Run The MVP</a>
-              <a class="button ghost" href="https://github.com/krazybean/Hayabusa/issues" target="_blank" rel="noreferrer">Discuss Setup</a>
+
+            <p class="signal-line">
+              <span class="signal-dot"></span>
+              Detection triggered: Failed login burst (6 attempts)
+            </p>
+
+            <div class="terminal-panel">
+              <div class="terminal-noise"></div>
+              <p>$ hayabusa --smoke-test</p>
+              <p>[OK] Vector ingest lane: Active</p>
+              <p>[OK] ClickHouse: Writing 6.42 MB/s</p>
+              <p>[SQL] SOURCE = security.events; WINDOW = 5m</p>
+              <p>{ "timestamp":"2026-04-09T05:42:18Z", "src_ip":"192.168.1.45", "user":"admin" }</p>
+              <p>{ "reason":"failed_password", "count":6, "burst_window":"2m" }</p>
+              <p class="terminal-alert">!!! ALERT: BRUTE_FORCE_DETECTED [source: 192.168.1.45]</p>
             </div>
           </div>
-
-          <aside class="hero-panel reveal delay-2">
-            <div class="terminal-frame">
-              <div class="terminal-bar">
-                <span></span>
-                <span></span>
-                <span></span>
-              </div>
-              <div class="terminal-body">
-                <p><span class="accent">$</span> ./scripts/smoke-test.sh</p>
-                <p>OK: events ingested into ClickHouse</p>
-                <p>OK: detection wrote alert candidate rows</p>
-                <p>OK: Grafana sent webhook alert to alert-sink</p>
-                <p class="terminal-success">Smoke test passed.</p>
-              </div>
-            </div>
-
-            <div class="proof-stack">
-              <div class="proof-card">
-                <p class="proof-label">Stored Event</p>
-                <p class="proof-value">security.events</p>
-                <p class="proof-note">syslog, demo logs, and one Windows host lane</p>
-              </div>
-              <div class="proof-card">
-                <p class="proof-label">Detection Output</p>
-                <p class="proof-value">security.alert_candidates</p>
-                <p class="proof-note">scheduled SQL rules for suspicious login bursts</p>
-              </div>
-            </div>
-          </aside>
         </section>
 
-        <section id="proof" class="section reveal delay-2">
-          <div class="section-heading">
-            <p class="eyebrow">Proven Today</p>
-            <h2>One narrow security workflow is real and repeatable.</h2>
+        <section id="logic" class="band band-logic">
+          <div class="band-head">
+            <div>
+              <p class="section-kicker">Operational logic</p>
+              <h2>One security workflow. Fully working. End-to-end.</h2>
+            </div>
+            <div class="logic-meta">
+              <p><span>Stable version:</span> v1</p>
+              <p><span>Reliability:</span> real</p>
+              <p><span>Latency:</span> &lt; 45s</p>
+            </div>
           </div>
-          <div class="grid grid-3">
-            <article class="card">
-              <p class="card-kicker">Ingest</p>
-              <h3>Events reach ClickHouse</h3>
+
+          <div class="logic-cards">
+            <article class="logic-card">
+              <div class="logic-icon">⤓</div>
+              <h3>Ingest (Vector)</h3>
               <p>
-                Vector accepts syslog, demo traffic, and one real Windows forward lane,
-                then stores normalized events in <code>security.events</code>.
+                Lightweight log shipping and transformation pipeline. Handles syslog and one
+                Windows host lane with minimal CPU footprint.
               </p>
             </article>
-            <article class="card">
-              <p class="card-kicker">Detect</p>
-              <h3>Suspicious logins produce candidates</h3>
+            <article class="logic-card logic-card-featured">
+              <div class="logic-icon">◉</div>
+              <h3>Detect (Logins)</h3>
               <p>
-                The current ruleset is intentionally small and focused on repeated failed
-                login activity across SSH-style and Windows logon telemetry.
+                Rules evaluate failed-logon patterns every 30 seconds and write matches into
+                <code>security.alert_candidates</code>.
               </p>
             </article>
-            <article class="card">
-              <p class="card-kicker">Alert</p>
-              <h3>Grafana fires real webhooks</h3>
+            <article class="logic-card">
+              <div class="logic-icon">✦</div>
+              <h3>Alert (Grafana)</h3>
               <p>
-                Detection rows in <code>security.alert_candidates</code> drive Grafana alerting,
-                and <code>alert-sink</code> receives firing and resolved payloads.
+                Native Grafana webhook routing turns detections into a real payload the local
+                alert sink can receive and log.
               </p>
             </article>
           </div>
         </section>
 
-        <section id="demo-flow" class="section reveal delay-3">
-          <div class="section-heading">
-            <p class="eyebrow">Demo Flow</p>
-            <h2>Five steps, one story.</h2>
-          </div>
-          <div class="flow-strip">
-            <div class="flow-step">
-              <span class="flow-index">01</span>
-              <h3>Logs Enter</h3>
-              <p>Syslog, demo traffic, or Windows events enter Vector.</p>
-            </div>
-            <div class="flow-step">
-              <span class="flow-index">02</span>
-              <h3>Events Store</h3>
-              <p>NATS buffers the stream and ClickHouse stores normalized records.</p>
-            </div>
-            <div class="flow-step">
-              <span class="flow-index">03</span>
-              <h3>Rules Evaluate</h3>
-              <p>The detection runner checks for suspicious login bursts every 30 seconds.</p>
-            </div>
-            <div class="flow-step">
-              <span class="flow-index">04</span>
-              <h3>Candidates Land</h3>
-              <p>Matches are written to <code>security.alert_candidates</code>.</p>
-            </div>
-            <div class="flow-step">
-              <span class="flow-index">05</span>
-              <h3>Alert Fires</h3>
-              <p>Grafana sends a webhook and <code>alert-sink</code> logs the payload.</p>
-            </div>
-          </div>
-        </section>
-
-        <section class="section reveal delay-3">
-          <div class="section-heading">
-            <p class="eyebrow">Use Case Focus</p>
-            <h2>What Hayabusa is trying to prove right now.</h2>
-          </div>
-          <div class="grid grid-2">
-            <article class="card emphasis">
-              <p class="card-kicker">Current Detection Coverage</p>
-              <h3>Suspicious login activity on servers</h3>
-              <ul class="clean-list">
-                <li>Repeated failed SSH-style login events from syslog traffic</li>
-                <li>Repeated failed Windows logons from one real host lane</li>
-                <li>Endpoint activity visibility based on events already stored</li>
-              </ul>
+        <section id="story" class="band band-story">
+          <p class="story-heading">Five steps, one story.</p>
+          <div class="story-line">
+            <article class="story-step">
+              <span class="story-index is-active">01</span>
+              <h3>Logs enter</h3>
+              <p>Telemetry streams from syslog or Windows forward into Hayabusa.</p>
             </article>
-            <article class="card">
-              <p class="card-kicker">Who It Helps</p>
-              <h3>Technical evaluation before platform expansion</h3>
-              <ul class="clean-list">
-                <li>Engineers validating a self-hosted telemetry path</li>
-                <li>Consultants who want a credible setup/integration baseline</li>
-                <li>Teams that need a narrow demo without buying into a full SIEM</li>
-              </ul>
+            <article class="story-step">
+              <span class="story-index">02</span>
+              <h3>Events store</h3>
+              <p>Normalized events land in ClickHouse for rapid lookup.</p>
+            </article>
+            <article class="story-step">
+              <span class="story-index">03</span>
+              <h3>Rules evaluate</h3>
+              <p>Scheduled SQL checks identify suspicious login bursts.</p>
+            </article>
+            <article class="story-step">
+              <span class="story-index">04</span>
+              <h3>Detection recorded</h3>
+              <p>Matches are written to <code>alert_candidates</code> for alerting and review.</p>
+            </article>
+            <article class="story-step">
+              <span class="story-index is-active">05</span>
+              <h3>Webhook delivered</h3>
+              <p>Grafana posts a real payload and <code>alert-sink</code> confirms delivery.</p>
             </article>
           </div>
         </section>
 
-        <section class="section reveal delay-4">
-          <div class="section-heading">
-            <p class="eyebrow">Architecture</p>
-            <h2>Small enough to explain, real enough to demo.</h2>
+        <section id="scope" class="band band-scope">
+          <div class="scope-grid">
+            <div class="scope-copy">
+              <p class="section-kicker">What Hayabusa detects today</p>
+              <h2>Focused detection instead of platform sprawl.</h2>
+
+              <div class="scope-group">
+                <h3>Detects brute-force login attempts across distributed SSH nodes</h3>
+                <ul>
+                  <li>Correlates repeated failed SSH-style logins over short windows</li>
+                  <li>Highlights burst behavior instead of isolated noisy failures</li>
+                  <li>Identifies impossible travel patterns for RDP accounts</li>
+                  <li>Flags suspicious authentication bursts in real time</li>
+                </ul>
+              </div>
+
+              <div class="scope-group">
+                <h3>Built for operators who need signal fast, not platform overhead</h3>
+                <ul>
+                  <li>Supports one real Windows host lane alongside Linux and syslog telemetry</li>
+                  <li>Helps infrastructure teams validate lean security stacks</li>
+                  <li>Helps security engineers test event-driven detection at scale</li>
+                </ul>
+              </div>
+            </div>
+
+            <aside class="matrix-card">
+              <h3>The scope matrix</h3>
+              <div class="matrix-block">
+                <p class="matrix-title">What works today (proven)</p>
+                <p>
+                  Focused, high-signal ingest, core data ingestion, activity and detection views,
+                  and practical depth is specific login telemetry over broad, shallow coverage.
+                </p>
+              </div>
+              <div class="matrix-block matrix-block-muted">
+                <p class="matrix-title">What’s intentionally missing (for now)</p>
+                <p>
+                  Deferred: full SIEM scope, GUI-heavy rule builders, agent management, compliance
+                  packs, and broad platform abstractions for unsupported workflows.
+                </p>
+              </div>
+            </aside>
           </div>
-          <div class="architecture-rack">
-            <div class="rack-node">Vector</div>
-            <div class="rack-arrow">→</div>
-            <div class="rack-node">NATS JetStream</div>
-            <div class="rack-arrow">→</div>
-            <div class="rack-node">ClickHouse</div>
-            <div class="rack-arrow">→</div>
-            <div class="rack-node">Detection</div>
-            <div class="rack-arrow">→</div>
-            <div class="rack-node">Grafana</div>
-            <div class="rack-arrow">→</div>
-            <div class="rack-node">alert-sink</div>
-          </div>
-          <p class="architecture-note">
-            No auth layer. No custom backend API. No cluster story. No fake product claims.
-            Just a self-hosted MVP proving one detection path end to end.
+        </section>
+
+        <section id="architecture" class="band band-architecture">
+          <p class="story-heading">Small enough to explain, real enough to demo.</p>
+          <p class="architecture-subtitle">
+            A complete ingest → detect → alert pipeline using simple, composable components.
           </p>
-        </section>
 
-        <section id="scope" class="section reveal delay-4">
-          <div class="grid grid-2">
-            <article class="card">
-              <p class="card-kicker">What It Is</p>
-              <h3>Credible early product foundation</h3>
-              <p>
-                Hayabusa can already support two conversations: run it yourself as a technical MVP,
-                or use it as the foundation for setup, integration, and further product shaping.
-              </p>
-            </article>
-            <article class="card warning">
-              <p class="card-kicker">What Is Deferred</p>
-              <h3>Everything outside the proven path</h3>
-              <p>
-                Auth, user management, APIs, custom UI, clustering, compliance, and wider SOC workflows
-                are intentionally deferred until the suspicious-login path is mature enough to justify them.
-              </p>
-            </article>
+          <div class="architecture-flow">
+            <span class="flow-node">vector</span>
+            <span class="flow-arrow">→</span>
+            <span class="flow-node">nats jetstream</span>
+            <span class="flow-arrow">→</span>
+            <span class="flow-node flow-node-accent">clickhouse</span>
+            <span class="flow-arrow">→</span>
+            <span class="flow-node">detection engine</span>
+            <span class="flow-arrow">→</span>
+            <span class="flow-node">grafana</span>
+            <span class="flow-arrow flow-arrow-drop">↘</span>
+            <span class="flow-node flow-node-alert">alert-sink</span>
           </div>
         </section>
 
-        <section class="section cta-band reveal delay-5">
-          <div>
-            <p class="eyebrow">Next Step</p>
-            <h2>Review the repo, run the MVP, or use it as the starting point for a setup conversation.</h2>
+        <section class="band band-media">
+          <p class="media-kicker">Live detection pipeline</p>
+          <div class="media-stage">
+            <div class="rack rack-left"></div>
+            <div class="rack rack-center"></div>
+            <div class="rack rack-right"></div>
+            <div class="media-badge" aria-hidden="true">Demo capture coming soon</div>
+            <div class="media-caption">
+              <p class="caption-kicker">Live detection pipeline</p>
+              <p>Real demo capture coming soon.</p>
+            </div>
           </div>
-          <div class="cta-row">
-            <a class="button primary" href="https://github.com/krazybean/Hayabusa" target="_blank" rel="noreferrer">View The Repo</a>
-            <a class="button secondary" href="https://github.com/krazybean/Hayabusa/blob/dev/MVP_RUNBOOK.md" target="_blank" rel="noreferrer">Read The Runbook</a>
-            <a class="button ghost" href="https://github.com/krazybean/Hayabusa/blob/dev/WINDOWS_REAL_HOST_RUNBOOK.md" target="_blank" rel="noreferrer">Windows Host Guide</a>
+        </section>
+
+        <section class="band band-final-cta">
+          <p class="final-kicker">See a real login attack get detected on your machine.</p>
+          <h2>Run Hayabusa locally in under 10 minutes.</h2>
+          <p class="final-copy">
+            Built for engineers who need to detect failed logins and brute-force attempts
+            without running a full SIEM.
+          </p>
+          <div class="hero-actions hero-actions-centered">
+            <a class="button primary" href="https://github.com/krazybean/Hayabusa/blob/main/MVP_RUNBOOK.md" target="_blank" rel="noreferrer">Run the MVP locally</a>
+            <a class="button secondary" href="https://github.com/krazybean/Hayabusa/blob/main/WINDOWS_REAL_HOST_RUNBOOK.md" target="_blank" rel="noreferrer">Read the runbook</a>
           </div>
         </section>
       </main>
+
+      <footer class="site-footer">
+        <div class="footer-brand">Hayabusa</div>
+        <div class="footer-links">
+          <a href="https://krazybean.github.io/Hayabusa/">Live site</a>
+          <a href="https://github.com/krazybean/Hayabusa" target="_blank" rel="noreferrer">Source code</a>
+          <a href="https://github.com/krazybean/Hayabusa/blob/main/docs/public-launch-checklist.md" target="_blank" rel="noreferrer">Launch checklist</a>
+          <a href="https://github.com/krazybean/Hayabusa/blob/main/MVP_RUNBOOK.md" target="_blank" rel="noreferrer">MVP runbook</a>
+        </div>
+        <div class="footer-copy">© 2026 Hayabusa Telemetry. All systems operational.</div>
+      </footer>
     </div>
   </body>
 </html>

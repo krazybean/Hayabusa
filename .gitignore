@@ -205,6 +205,14 @@ cython_debug/
 .DS_Store
 **/.DS_Store
 
+# Local AI workflow / planning files
+.codex/
+AGENTS.md
+CLAUDE.md
+WORKING_CONTEXT.md
+WORKING_CONTEXT*.md
+security-platform-starter-bundle.zip
+
 # Local TLS material (never commit private keys/certs)
 secrets/windows-forward-tls/*
 !secrets/windows-forward-tls/.gitkeep
