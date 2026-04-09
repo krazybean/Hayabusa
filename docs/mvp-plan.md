@@ -31,13 +31,15 @@ Build a local Docker Compose stack that proves:
 
 - Docker Compose boots the strict MVP stack
 - Vector accepts demo logs and syslog on `1514`
+- Vector accepts one Windows Fluent Bit forward lane on `24225`
 - Vector publishes normalized events into JetStream
 - Vector consumes buffered events into `security.events`
+- ClickHouse exposes endpoint visibility through `security.endpoint_activity`
 - Detection polls ClickHouse every 30 seconds
 - Detection writes to `security.alert_candidates`
 - Grafana provisions one ClickHouse datasource
 - Grafana provisions one dashboard
-- Grafana provisions one alert rule
+- Grafana provisions alert rules for active detections
 - `alert-sink` receives Grafana webhook payloads
 - `./scripts/smoke-test.sh` proves ingest -> store -> detect
 

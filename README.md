@@ -1,100 +1,144 @@
-# Hayabusa Strict MVP
+# Hayabusa
 
-Hayabusa is a local Docker Compose proof-of-function stack for one path only:
+> Self-hosted suspicious-login detection for servers.
+
+Hayabusa is a self-hosted security telemetry MVP focused on detecting suspicious login activity on servers.
 
 ```text
 ingest -> store -> detect -> alert
 ```
 
-This repo is intentionally narrow. It proves that logs can enter the system, land in ClickHouse, trigger a SQL detection, and produce a webhook alert.
+Today it proves one narrow path end to end with a local Docker Compose stack. It is not a finished product, not a full SIEM, and not Wazuh parity.
 
-## Active stack
+## What Hayabusa Detects Right Now
 
-- ClickHouse
-- NATS JetStream
-- Vector
-- Grafana
-- detection
-- alert-sink
+- repeated failed SSH-style login activity from syslog/demo traffic
+- repeated failed Windows logons from one real Windows host lane
+- endpoint activity visibility from the events already stored in ClickHouse
 
-## Quick start
+## What It Is
+
+- a reproducible stack for log ingestion, buffering, storage, SQL detections, Grafana alerting, and webhook delivery
+- a technical proof that suspicious-login telemetry can move from raw events to real alerts
+- a base that can support both product direction and setup/integration services later
+
+## Who It Is For
+
+- engineers who want a self-hosted proof of suspicious-login detection
+- security consultants who need a credible demoable baseline
+- small teams evaluating a focused ClickHouse-based telemetry path
+
+## What It Is Not
+
+- not a full SIEM
+- not Wazuh parity
+- not a control plane
+- not multi-tenant
+- not HA or clustered
+- not a polished user-facing product
+
+## Proven Today
+
+- syslog and demo events arrive in `security.events`
+- one Windows host lane exists via `vector-windows-endpoint`
+- detections are written to `security.alert_candidates`
+- Grafana evaluates alert rules from ClickHouse data
+- `alert-sink` receives firing and resolved webhook payloads
+
+## Demo Flow
+
+1. logs enter Vector from syslog, demo traffic, or one Windows forward lane
+2. Vector buffers through NATS JetStream and stores normalized events in ClickHouse
+3. the detection service evaluates SQL rules on a schedule
+4. detection matches are written to `security.alert_candidates`
+5. Grafana fires an alert and `alert-sink` logs the webhook payload
+
+## Current Stack
+
+- `vector`: ingest and normalization
+- `nats` + JetStream: buffer
+- `clickhouse`: event storage and query engine
+- `detection`: scheduled SQL rule runner
+- `grafana`: dashboard and alerting
+- `alert-sink`: webhook receiver
+
+## Quick Start
 
 ```bash
 docker compose up -d --remove-orphans
 ./scripts/smoke-test.sh
 ```
 
-Or use:
+If first boot is slow:
+- Grafana downloads the pinned ClickHouse datasource plugin on startup
+- a clean machine therefore needs outbound network access for that plugin unless it is already cached
 
-```bash
-./scripts/bootstrap.sh
-```
-
-For repeatable demo steps and expected outputs, use `MVP_RUNBOOK.md`.
-
-First boot note:
-- Grafana downloads the pinned ClickHouse datasource plugin on startup, so a clean machine needs outbound network access for that step unless the plugin is already cached
-
-## Endpoints
+## Where To Look
 
 - Grafana: `http://localhost:3000`
-- ClickHouse: `http://localhost:8123`
+- ClickHouse HTTP: `http://localhost:8123`
 - NATS monitor: `http://localhost:8222`
 - Vector health: `http://localhost:8686/health`
-- Alert sink: `http://localhost:5678/health`
+- Windows forward lane: `tcp://<host>:24225`
+- Alert sink health: `http://localhost:5678/health`
 
-## External syslog
+## Lightweight Demo Surface
 
-Vector accepts syslog on:
-
-- `127.0.0.1:1514/tcp`
-- `127.0.0.1:1514/udp`
-
-Example:
+- static site entry: [docs/index.html](docs/index.html)
+- GitHub Pages-ready assets: [docs/styles.css](docs/styles.css)
+- local preview:
 
 ```bash
-printf '<134>1 %s authhost sshd 101 ID47 - Failed password for invalid user root from 10.0.0.1 port 22 ssh2\n' "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
-  | nc -u -w1 127.0.0.1 1514
+python3 -m http.server 8088 -d docs
 ```
 
-## Verify each stage
+Then open `http://localhost:8088`.
 
-Events in ClickHouse:
+## Verify The MVP
+
+Stored events:
 
 ```bash
-curl -s http://localhost:8123 --data-binary \
+curl -s http://localhost:8123/ --data-binary \
   "SELECT ts, ingest_source, message FROM security.events ORDER BY ts DESC LIMIT 20 FORMAT PrettyCompact"
 ```
 
 Detection output:
 
 ```bash
-curl -s http://localhost:8123 --data-binary \
+curl -s http://localhost:8123/ --data-binary \
   "SELECT ts, rule_id, severity, hits FROM security.alert_candidates ORDER BY ts DESC LIMIT 20 FORMAT PrettyCompact"
 ```
 
 Webhook delivery:
 
 ```bash
-docker compose logs --tail=80 alert-sink
+docker compose logs --tail=120 alert-sink
 ```
 
-You should see `received method=POST path=/alerts/default` after the Grafana rule fires.
+Expected:
+- `received method=POST path=/alerts/default`
 
-## Repo shape
+## Runbooks
 
-- `docker-compose.yml`: strict MVP runtime
-- `configs/vector/vector.yaml`: ingestion and buffering
-- `configs/rules/mvp/security-failed-login-burst.yaml`: single active rule
-- `services/detection/run.sh`: SQL detection loop
-- `services/alert-router/server.js`: webhook receiver
-- `scripts/smoke-test.sh`: end-to-end verification
+- [MVP_RUNBOOK.md](MVP_RUNBOOK.md): safe project-only reset, clean rebuild, and MVP validation
+- [WINDOWS_REAL_HOST_RUNBOOK.md](WINDOWS_REAL_HOST_RUNBOOK.md): first real Windows host onboarding and validation
 
-## Optional external forwarding
+## Deferred Scope
 
-```bash
-HAYABUSA_EXTERNAL_WEBHOOK_URL=https://example-alert-endpoint.local/webhook
-HAYABUSA_EXTERNAL_WEBHOOK_TOKEN=replace_me
-```
+- authentication and user accounts
+- API layer
+- custom frontend
+- clustering or HA
+- compliance/reporting
+- endpoint fleet management beyond one real Windows host path
+- advanced control-plane workflows
+- external alert routing beyond the local webhook sink
 
-If unset, `alert-sink` still logs the Grafana payload locally, which is enough for MVP proof.
+## Repo Pointers
+
+- [docker-compose.yml](docker-compose.yml)
+- [configs/vector/vector.yaml](configs/vector/vector.yaml)
+- [services/detection/run.sh](services/detection/run.sh)
+- [configs/grafana/provisioning/alerting/hayabusa-alerting.yaml](configs/grafana/provisioning/alerting/hayabusa-alerting.yaml)
+- [scripts/smoke-test.sh](scripts/smoke-test.sh)

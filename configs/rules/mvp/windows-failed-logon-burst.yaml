@@ -1,0 +1,18 @@
+id: windows_failed_logon_burst
+name: Windows Failed Logon Burst
+description: Detect repeated Windows failed logons from one real endpoint in the last 5 minutes.
+severity: medium
+enabled: true
+threshold_op: gte
+threshold_value: 5
+cooldown_seconds: 300
+query: |
+  SELECT count()
+  FROM security.events
+  WHERE ts > now() - INTERVAL 5 MINUTE
+    AND ingest_source = 'vector-windows-endpoint'
+    AND (
+      lowerUTF8(ifNull(fields['event_id'], '')) = '4625'
+      OR positionCaseInsensitive(message, 'An account failed to log on') > 0
+      OR positionCaseInsensitive(message, 'event id: 4625') > 0
+    )

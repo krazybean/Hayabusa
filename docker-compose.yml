@@ -63,6 +63,7 @@ services:
       - "8686:8686"
       - "1514:1514"
       - "1514:1514/udp"
+      - "24225:24225"
     volumes:
       - ./configs/vector/vector.yaml:/etc/vector/vector.yaml:ro
     depends_on:
