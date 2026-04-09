@@ -2,139 +2,63 @@
 
 ## Objective
 
-Build a local, runnable starter stack that proves:
-- services can start together
-- config layout is stable
-- observability tools are reachable
-- ClickHouse exists as the future event store
-- Vector exists as the future ingestion layer
-- NATS exists as the future transport layer
+Build a local Docker Compose stack that proves:
+- logs can be ingested
+- logs can be stored
+- SQL detections can run
+- Grafana can alert
+- a webhook receiver can receive the alert
 
-## Phase 1: Local foundation (completed)
+## Scope
 
-Deliver:
-- Docker Compose stack
-- ClickHouse
-- ClickHouse Keeper
-- NATS JetStream
-- Grafana
-- Prometheus
-- Vector
+- Keep:
+  - ClickHouse
+  - NATS JetStream
+  - Vector
+  - Grafana
+  - detection
+  - alert-sink
+- Do not add:
+  - auth
+  - API layer
+  - custom frontend
+  - clustering
+  - Windows endpoint management
+  - compliance/reporting
+  - advanced detection redesign
 
-## Phase 2: Basic ingestion path (completed)
+## Completed
 
-Deliver:
-- Vector reads a local demo source
-- Vector normalizes events
-- Vector writes to console for debug visibility
+- Docker Compose boots the strict MVP stack
+- Vector accepts demo logs and syslog on `1514`
+- Vector publishes normalized events into JetStream
+- Vector consumes buffered events into `security.events`
+- Detection polls ClickHouse every 30 seconds
+- Detection writes to `security.alert_candidates`
+- Grafana provisions one ClickHouse datasource
+- Grafana provisions one dashboard
+- Grafana provisions one alert rule
+- `alert-sink` receives Grafana webhook payloads
+- `./scripts/smoke-test.sh` proves ingest -> store -> detect
 
-## Phase 3: First storage integration (completed)
+## Remaining small work
 
-Deliver:
-- create a ClickHouse database (`security`)
-- add an events table (`security.events`)
-- route a basic normalized stream into ClickHouse
+- keep README and docs aligned with the reduced scope
+- keep the smoke test green on a clean machine
+- keep pinned image and plugin versions intentional when retesting the stack
 
-## Phase 4: Metrics and dashboards (completed)
+## Success condition
 
-Deliver:
-- Prometheus scrape config
-- Grafana datasource provisioning
-- first Grafana dashboard for `security.events` visibility
+Run:
 
-## Phase 5: Detection placeholder (completed)
+```bash
+docker compose up -d --remove-orphans
+./scripts/smoke-test.sh
+docker compose logs --tail=80 alert-sink
+```
 
-Deliver:
-- repo structure for future detection engine
-- rules directory in YAML
-
-## Phase 6: Detection engine MVP (completed)
-
-Deliver:
-- detection service container in Docker Compose
-- YAML rule execution against ClickHouse
-- triggered candidates persisted to `security.alert_candidates`
-
-## Phase 7: Active transport/buffer path (completed)
-
-Deliver:
-- NATS JetStream stream/consumer bootstrap in compose startup
-- Vector route updated to `normalize -> JetStream -> ClickHouse`
-- Smoke test checks for JetStream stream/consumer/subject wiring
-
-## Phase 8: Host collector baseline (completed)
-
-Deliver:
-- Fluent Bit service added to Docker Compose for host-log collection
-- Fluent Bit forward protocol integrated into Vector ingest path
-- Smoke test validates Fluent Bit -> Vector -> JetStream -> ClickHouse flow
-
-## Phase 9: Windows collection strategy (completed)
-
-Deliver:
-- Windows Fluent Bit `winevtlog` config template
-- Baseline field mapping expectations into Vector normalization
-- Windows collection runbook and endpoint validation script
-- Local simulator path for Windows lane verification
-- mTLS toolkit for Windows lane (cert generation + config templates)
-- Active stack mTLS enablement for Windows lane
-- Endpoint enrollment bundle flow with endpoint-specific client certificates
-
-## Phase 10: Windows detection content expansion (completed)
-
-Deliver:
-- Windows EventID-focused detection rules (failed logon, lockout, service install, privileged group changes)
-- Windows security scenario generator for local validation
-- Rule cooldown suppression support to reduce repeated candidate spam
-
-## Phase 11: Correlation + investigation starter pack (completed)
-
-Deliver:
-- First multi-signal Windows correlation rule (`4625 -> 4740`)
-- Starter investigation query pack for ClickHouse triage workflows
-
-## Phase 12: Correlation + investigation UI expansion (completed)
-
-Deliver:
-- Additional Windows correlation rules (`4625->4697/7045`, `4625->4728/4732/4756`, `4740->4697/7045`)
-- Provisioned Grafana investigation dashboard (`Hayabusa Investigations`)
-
-## Phase 13: Correlation alerting + cutover guardrails (completed)
-
-Deliver:
-- Grafana alert rules for Windows multi-signal correlation detections
-- Real-host cutover guard script for endpoint-specific validation + `permit_origin` hardening checks
-
-## Phase 14: Canonical schema + versioning baseline (completed)
-
-Deliver:
-- Canonical normalized event schema contract (`hayabusa.event.v1`)
-- Schema version stamping in Vector normalization
-- ClickHouse migration path for `security.events.schema_version`
-
-## Phase 15: Endpoint visibility baseline (completed)
-
-Deliver:
-- ClickHouse endpoint inventory/activity view (`security.endpoint_activity`)
-- Migration coverage for endpoint inventory view in existing deployments
-- Endpoint activity report script with stale/offline checks
-
-## Phase 16: Endpoint policy drift baseline (completed)
-
-Deliver:
-- YAML endpoint policy source-of-truth (`configs/endpoints/windows-endpoints.yaml`)
-- Required vs optional endpoint drift checker (`scripts/endpoint-policy-drift-check.sh`)
-- Cutover orchestrator linkage to policy drift checks (`--only-id`, soft/hard fail mode)
-
-## Phase 17: Endpoint policy automation baseline (completed)
-
-Deliver:
-- Endpoint policy upsert automation (`scripts/upsert-endpoint-policy.sh`)
-- Enrollment integration (auto-register/update endpoint policy entries)
-- Cutover integration for required promotion + hard enforcement (`--promote-required-on-success`, `--first-real-host`)
-
-## Next focus
-
-- First real Windows host deployment execution using `--first-real-host`
-- Endpoint lifecycle policy (certificate rotation/revocation + decommission workflow)
-- Compliance/reporting starter pack
+Success means:
+- events exist in `security.events`
+- detections exist in `security.alert_candidates`
+- Grafana sends a webhook
+- `alert-sink` logs the alert payload

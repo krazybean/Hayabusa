@@ -8,7 +8,6 @@ sources:
     format: syslog
     interval: 1
 
-  # External syslog ingress (host/remote feed can send to port 1514).
   ingest_syslog_tcp:
     type: syslog
     address: 0.0.0.0:1514
@@ -19,35 +18,6 @@ sources:
     address: 0.0.0.0:1514
     mode: udp
 
-  # Fluent Bit forward input for host-collector traffic.
-  ingest_fluent_forward:
-    type: fluent
-    mode: tcp
-    address: 0.0.0.0:24224
-
-  # Dedicated Windows endpoint lane (Fluent Bit winevtlog forward).
-  ingest_fluent_windows_forward:
-    type: fluent
-    mode: tcp
-    address: 0.0.0.0:24225
-    connection_limit: 200
-    # Default allowlist covers local lab/private networks; tighten this to explicit endpoint CIDRs.
-    permit_origin:
-      - 10.0.0.0/8
-      - 172.16.0.0/12
-      - 192.168.0.0/16
-      - 127.0.0.0/8
-    # mTLS is enabled for the Windows endpoint lane.
-    # Server certs are generated locally by scripts/generate-windows-forward-certs.sh.
-    tls:
-      enabled: true
-      verify_certificate: true
-      ca_file: /etc/vector/tls/windows-forward/ca.crt
-      crt_file: /etc/vector/tls/windows-forward/server.crt
-      key_file: /etc/vector/tls/windows-forward/server.key
-      client_metadata_key: tls_client
-
-  # Buffered normalized events pulled back from JetStream before storage.
   buffered_events:
     type: nats
     connection_name: vector-buffer-reader
@@ -66,32 +36,22 @@ transforms:
       - demo_logs
       - ingest_syslog_tcp
       - ingest_syslog_udp
-      - ingest_fluent_forward
-      - ingest_fluent_windows_forward
     source: |
-      # Stable anchor fields
-      # ClickHouse DateTime64 JSON parsing rejects RFC3339 trailing "Z" in this setup.
-      # Normalize to "YYYY-MM-DD HH:MM:SS.mmm" before insert.
       if exists(.timestamp) {
         .ts = format_timestamp!(del(.timestamp), format: "%Y-%m-%d %H:%M:%S%.3f", timezone: "UTC")
       } else {
         .ts = format_timestamp!(now(), format: "%Y-%m-%d %H:%M:%S%.3f", timezone: "UTC")
       }
+
       .platform = "local-mvp"
       .schema_version = "hayabusa.event.v1"
+
       if exists(.source_type) {
         .ingest_source = "vector-" + to_string!(.source_type)
       } else {
         .ingest_source = "vector-syslog"
       }
-      if exists(.source_type) && to_string!(.source_type) == "fluent" {
-        .ingest_source = "vector-fluent"
-        if exists(.tag) && to_string!(.tag) == "windows.events" {
-          .ingest_source = "vector-windows-endpoint"
-        }
-      }
 
-      # Ensure required message anchor column is always present.
       if !exists(.message) {
         if exists(.log) {
           .message = to_string!(.log)
@@ -106,9 +66,6 @@ transforms:
         .message = to_string!(.message)
       }
 
-      # Collect all variable source fields into the Map(String, String) column.
-      # Coerce to string so ClickHouse accepts them without type errors.
-      # Update this block when the ingest source format changes.
       fields = {}
       if exists(.hostname)  { fields.hostname  = to_string!(.hostname) }
       if exists(.appname)   { fields.appname   = to_string!(.appname) }
@@ -116,45 +73,17 @@ transforms:
       if exists(.facility)  { fields.facility  = to_string!(.facility) }
       if exists(.procid)    { fields.procid    = to_string!(.procid) }
       if exists(.msgid)     { fields.msgid     = to_string!(.msgid) }
-      if exists(.tag)       { fields.tag       = to_string!(.tag) }
-      if exists(.collector) { fields.collector = to_string!(.collector) }
-      if exists(.host_collection) { fields.host_collection = to_string!(.host_collection) }
-      if exists(.Channel) { fields.channel = to_string!(.Channel) }
-      if exists(.channel) { fields.channel = to_string!(.channel) }
-      if exists(.Computer) { fields.computer = to_string!(.Computer) }
-      if exists(.computer) { fields.computer = to_string!(.computer) }
-      if exists(.EventID) { fields.event_id = to_string!(.EventID) }
-      if exists(.event_id) { fields.event_id = to_string!(.event_id) }
-      if exists(.Level) { fields.level = to_string!(.Level) }
-      if exists(.level) { fields.level = to_string!(.level) }
-      if exists(.ProviderName) { fields.provider_name = to_string!(.ProviderName) }
-      if exists(.provider_name) { fields.provider_name = to_string!(.provider_name) }
       if exists(.schema_version) { fields.schema_version = to_string!(.schema_version) }
       .fields = fields
 
-      # Remove top-level source fields now captured in the map
       del(.hostname)
       del(.appname)
       del(.severity)
       del(.facility)
       del(.procid)
       del(.msgid)
-      del(.tag)
-      del(.collector)
-      del(.host_collection)
-      del(.Channel)
-      del(.channel)
-      del(.Computer)
-      del(.computer)
-      del(.EventID)
-      del(.event_id)
-      del(.Level)
-      del(.level)
-      del(.ProviderName)
-      del(.provider_name)
 
 sinks:
-  # Buffer sink — writes normalized events into NATS JetStream.
   nats_events_buffer:
     type: nats
     inputs:
@@ -166,7 +95,6 @@ sinks:
     jetstream:
       enabled: true
 
-  # ClickHouse sink — writes buffered events to security.events
   clickhouse_events:
     type: clickhouse
     inputs:
@@ -174,9 +102,8 @@ sinks:
     endpoint: http://clickhouse:8123
     database: security
     table: events
-    skip_unknown_fields: true  # drop any fields not in the table schema
+    skip_unknown_fields: true
 
-  # Console sink — kept for local debugging, shows the buffered event.
   console:
     type: console
     inputs:

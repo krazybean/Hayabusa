@@ -1,6 +1,6 @@
 id: security_failed_login_burst
 name: Security Failed Login Burst
-description: Detect repeated authentication failures from syslog-like messages.
+description: Detect repeated failed logins from syslog-style messages in the last minute.
 severity: medium
 enabled: true
 threshold_op: gte
@@ -10,7 +10,6 @@ query: |
   SELECT count()
   FROM security.events
   WHERE ts > now() - INTERVAL 1 MINUTE
-    AND {{SUPPRESSION_CONDITION}}
     AND (
       positionCaseInsensitive(message, 'failed password') > 0
       OR positionCaseInsensitive(message, 'authentication failure') > 0

@@ -1,0 +1,51 @@
+name: Dev MVP Validation
+
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+jobs:
+  validate-mvp:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install required host tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y netcat-openbsd
+
+      - name: Validate Compose config
+        run: docker compose config
+
+      - name: Start strict MVP stack
+        run: docker compose up -d --remove-orphans
+
+      - name: Run end-to-end smoke test
+        env:
+          SMOKE_TIMEOUT_SECONDS: "240"
+          SMOKE_ALERT_POLL_ATTEMPTS: "50"
+        run: ./scripts/smoke-test.sh
+
+      - name: Show service status
+        if: always()
+        run: docker compose ps --all
+
+      - name: Dump logs on failure
+        if: failure()
+        run: |
+          docker compose logs --tail=200 clickhouse
+          docker compose logs --tail=200 nats
+          docker compose logs --tail=200 vector
+          docker compose logs --tail=200 detection
+          docker compose logs --tail=200 grafana
+          docker compose logs --tail=200 alert-sink
+
+      - name: Tear down stack
+        if: always()
+        run: docker compose down -v --remove-orphans
