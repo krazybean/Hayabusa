@@ -9,7 +9,7 @@
 Hayabusa is a self-hosted security telemetry MVP focused on detecting suspicious login activity on servers.
 
 - Live site: https://krazybean.github.io/Hayabusa/
-- Focus: suspicious login detection on Linux/syslog and one Windows host lane
+- Focus: suspicious login detection on Linux SSH/syslog and one Windows collector lane
 - What this is: a small Docker Compose proof of `ingest -> store -> detect -> alert`
 
 ```text
@@ -28,6 +28,7 @@ Today it proves one narrow path end to end with a local Docker Compose stack. It
 
 - a reproducible stack for log ingestion, buffering, storage, SQL detections, Grafana alerting, and webhook delivery
 - a technical proof that suspicious-login telemetry can move from raw events to real alerts
+- a synthetic auth-validation lane that exercises the real normalized auth contract before live collectors are available
 - a base that can support both product direction and setup/integration services later
 
 ## Who It Is For
@@ -48,23 +49,28 @@ Today it proves one narrow path end to end with a local Docker Compose stack. It
 ## Proven Today
 
 - syslog and demo events arrive in `security.events`
+- synthetic auth events can populate `security.auth_events` without live infrastructure
 - one Windows host lane exists via `vector-windows-endpoint`
+- a first-party-feeling Windows collector path exists while keeping Vector under the hood
 - detections are written to `security.alert_candidates`
 - Grafana evaluates alert rules from ClickHouse data
 - `alert-sink` receives firing and resolved webhook payloads
 
 ## Demo Flow
 
-1. logs enter Vector from syslog, demo traffic, or one Windows forward lane
-2. Vector buffers through NATS JetStream and stores normalized events in ClickHouse
+1. logs enter Hayabusa through Vector from syslog/demo traffic or from the Windows collector via NATS
+2. NATS JetStream buffers normalized events before they are stored in ClickHouse
 3. the detection service evaluates SQL rules on a schedule
 4. detection matches are written to `security.alert_candidates`
 5. Grafana fires an alert and `alert-sink` logs the webhook payload
 
 ## Current Stack
 
-- `vector`: ingest and normalization
+- `vector`: ingest and normalization for local/syslog traffic
+- `collector/linux`: Linux SSH collector template, scripts, and real-host docs using Vector under the hood
+- `collector/windows`: Windows collector template, scripts, and real-host docs using Vector under the hood
 - `nats` + JetStream: buffer
+- `hayabusa-ingest`: minimal NATS-to-ClickHouse writer for normalized events
 - `clickhouse`: event storage and query engine
 - `detection`: scheduled SQL rule runner
 - `grafana`: dashboard and alerting
@@ -80,9 +86,11 @@ Today it proves one narrow path end to end with a local Docker Compose stack. It
 ## Quick Start
 
 ```bash
-docker compose up -d --remove-orphans
+docker compose up -d --build
 ./scripts/smoke-test.sh
 ```
+
+Open the demo UI at `http://localhost:3000`.
 
 ## Daily Dev Cycle
 
@@ -106,11 +114,14 @@ If first boot is slow:
 
 ## Where To Look
 
-- Grafana: `http://localhost:3000`
+- Demo UI: `http://localhost:3000`
+- API: `http://localhost:8080`
+- Grafana: `http://localhost:3001`
 - ClickHouse HTTP: `http://localhost:8123`
 - NATS monitor: `http://localhost:8222`
 - Vector health: `http://localhost:8686/health`
-- Windows forward lane: `tcp://<host>:24225`
+- Windows collector target: `nats://<host>:4222`
+- Legacy Windows forward lane: `tcp://<host>:24225`
 - Alert sink health: `http://localhost:5678/health`
 
 ## Lightweight Demo Surface
@@ -131,14 +142,28 @@ Stored events:
 
 ```bash
 curl -s http://localhost:8123/ --data-binary \
-  "SELECT ts, ingest_source, message FROM security.events ORDER BY ts DESC LIMIT 20 FORMAT PrettyCompact"
+  "SELECT ts, ingest_source, message, fields FROM security.events ORDER BY ts DESC LIMIT 20 FORMAT PrettyCompact"
+```
+
+Latest auth events:
+
+```bash
+curl -s http://localhost:8123/ --data-binary \
+  "SELECT ts, ingest_source, user, src_ip, host, status, source_kind, raw_event_id FROM security.auth_events ORDER BY ts DESC LIMIT 20 FORMAT PrettyCompact"
+```
+
+Load synthetic auth scenarios and inspect the normalized auth view:
+
+```bash
+./scripts/load-synthetic-auth.sh --clear --scenario all
+./scripts/check-auth-events.sh
 ```
 
 Detection output:
 
 ```bash
 curl -s http://localhost:8123/ --data-binary \
-  "SELECT ts, rule_id, severity, hits FROM security.alert_candidates ORDER BY ts DESC LIMIT 20 FORMAT PrettyCompact"
+  "SELECT ts, alert_type, rule_id, attempt_count, entity_user, entity_src_ip, entity_host, distinct_user_count, distinct_ip_count, reason FROM security.alert_candidates ORDER BY ts DESC LIMIT 20 FORMAT PrettyCompact"
 ```
 
 Webhook delivery:
@@ -154,7 +179,15 @@ Expected:
 
 - [MVP_RUNBOOK.md](MVP_RUNBOOK.md): safe project-only reset, clean rebuild, and MVP validation
 - [WINDOWS_REAL_HOST_RUNBOOK.md](WINDOWS_REAL_HOST_RUNBOOK.md): first real Windows host onboarding and validation
+- [docs/windows-collector-quickstart.md](docs/windows-collector-quickstart.md): shortest Windows collector demo path
+- [collector/linux/docs/linux-collector.md](collector/linux/docs/linux-collector.md): Linux SSH collector install/config/test guide
+- [collector/windows/docs/windows-collector.md](collector/windows/docs/windows-collector.md): collector-focused Windows install/config/test guide
+- [collector/windows/docs/windows-real-host-test.md](collector/windows/docs/windows-real-host-test.md): short first-live-host Windows test walkthrough
+- [collector/windows/bundle/README.md](collector/windows/bundle/README.md): handoff bundle notes for a Windows tester
+- [scripts/build-windows-collector-package.sh](scripts/build-windows-collector-package.sh): assemble a zip-ready Windows evaluator bundle in `dist/`
 - [docs/public-launch-checklist.md](docs/public-launch-checklist.md): final public repo hygiene and pre-announcement checks
+- [docs/canonical-event-schema.md](docs/canonical-event-schema.md): raw event envelope and auth view explanation
+- [docs/synthetic-auth.md](docs/synthetic-auth.md): synthetic auth scenarios, loader flow, and validation queries
 
 ## Deferred Scope
 

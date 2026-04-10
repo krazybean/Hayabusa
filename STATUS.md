@@ -17,17 +17,20 @@ ingest -> store -> detect -> alert
 - Runtime pinning: core images pinned to the tested versions/digests in `docker-compose.yml`
 - Grafana plugin pinning: `grafana-clickhouse-datasource@4.14.0`
 - Ingest path: `Vector -> NATS JetStream -> ClickHouse` active
-- JetStream stream: `HAYABUSA_EVENTS` (`hayabusa.events.>`, max bytes `256 MiB`, max age `24h`)
+- JetStream stream: `HAYABUSA_EVENTS` (`events.auth`, max bytes `256 MiB`, max age `24h`)
 - JetStream durable consumer: `VECTOR_CLICKHOUSE_WRITER`
 - Syslog ingest: TCP/UDP `1514` active
 - Canonical schema contract: `hayabusa.event.v1` active (`schema_version` anchor + contract doc)
+- Auth query seam: `security.auth_events` view present for readable auth detections and investigations
 - Grafana dashboard: `Hayabusa Overview`
-- Grafana alerts: `Hayabusa Security Failed Login Burst`, `Hayabusa Windows Failed Logon Burst`
+- Grafana alerts: `Hayabusa Security Failed Login Burst`, `Hayabusa Windows Failed Logon Burst`, plus v1.1 auth detections for password spray, fail-then-success, and distributed attack
 - Detection engine MVP: active (`detection` service writes `security.alert_candidates`)
-- Active detection rules: `security_failed_login_burst`, `windows_failed_logon_burst`
+- Active detection rules: `security_failed_login_burst`, `security_source_multi_user_burst` (`password_spray`), `security_user_multi_source_burst` (`distributed_attack`), `security_failed_then_success` (`fail_then_success`), `windows_failed_logon_burst`
+- Alert candidate dedupe: fingerprint-based suppression for repeated runs of the same alert window bucket
 - Alert routing MVP: Grafana posts firing alerts to local `alert-sink`
 - External forwarding: optional via `HAYABUSA_EXTERNAL_WEBHOOK_URL`
-- Windows first-host path: Fluent Bit `winevtlog` -> Vector forward lane (`24225`) -> `security.events`
+- Linux collector path: SSH auth log -> Vector on host -> NATS -> `security.events`
+- Windows first-host path: Vector on host -> NATS -> `security.events`
 - Endpoint visibility: `security.endpoint_activity` view + `./scripts/endpoint-activity-report.sh`
 - Windows first-host validation runbook: `WINDOWS_REAL_HOST_RUNBOOK.md`
 - Lightweight demo surface: `docs/index.html` + `docs/styles.css`

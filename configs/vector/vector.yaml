@@ -8,6 +8,14 @@ sources:
     format: syslog
     interval: 1
 
+  # Dedicated auth-validation lane. These files are loaded by repo-local helper
+  # scripts and are kept separate from the generic demo stream on purpose.
+  synthetic_auth_files:
+    type: file
+    include:
+      - /var/lib/hayabusa/synthetic-auth/*.jsonl
+    read_from: beginning
+
   ingest_syslog_tcp:
     type: syslog
     address: 0.0.0.0:1514
@@ -24,19 +32,8 @@ sources:
     address: 0.0.0.0:24225
     connection_limit: 50
 
-  buffered_events:
-    type: nats
-    connection_name: vector-buffer-reader
-    url: nats://nats:4222
-    subject: hayabusa.events.normalized
-    decoding:
-      codec: json
-    jetstream:
-      stream: HAYABUSA_EVENTS
-      consumer: VECTOR_CLICKHOUSE_WRITER
-
 transforms:
-  normalize:
+  normalize_generic:
     type: remap
     inputs:
       - demo_logs
@@ -124,30 +121,120 @@ transforms:
       del(.ProviderName)
       del(.provider_name)
 
+  normalize_synthetic_auth:
+    type: remap
+    inputs:
+      - synthetic_auth_files
+    source: |
+      # Synthetic auth events deliberately use the same envelope as real auth
+      # telemetry so detections can be validated before live collectors arrive.
+      payload = parse_json!(to_string!(.message))
+
+      if exists(payload.timestamp) {
+        .ts = format_timestamp!(parse_timestamp!(to_string!(payload.timestamp), format: "%+"), format: "%Y-%m-%d %H:%M:%S%.3f", timezone: "UTC")
+      } else {
+        .ts = format_timestamp!(now(), format: "%Y-%m-%d %H:%M:%S%.3f", timezone: "UTC")
+      }
+
+      if exists(payload.platform) {
+        .platform = downcase(to_string!(payload.platform))
+      } else {
+        .platform = "synthetic-auth"
+      }
+
+      .schema_version = "hayabusa.event.v1"
+      .ingest_source = "synthetic-auth"
+
+      if exists(payload.message) {
+        .message = to_string!(payload.message)
+      } else {
+        .message = "synthetic auth event"
+      }
+
+      fields = {}
+      fields.event_type = "login"
+
+      if exists(payload.user) {
+        fields.user = to_string!(payload.user)
+      } else {
+        fields.user = ""
+      }
+
+      if exists(payload.src_ip) {
+        fields.src_ip = to_string!(payload.src_ip)
+      } else {
+        fields.src_ip = ""
+      }
+
+      if exists(payload.host) {
+        fields.host = to_string!(payload.host)
+      } else {
+        fields.host = ""
+      }
+
+      if exists(payload.status) {
+        fields.status = downcase(to_string!(payload.status))
+      } else {
+        fields.status = ""
+      }
+
+      if exists(payload.source_kind) {
+        fields.source_kind = to_string!(payload.source_kind)
+      } else if .platform == "windows" {
+        fields.source_kind = "windows_auth"
+      } else {
+        fields.source_kind = "linux_ssh"
+      }
+
+      if exists(payload.raw_event_id) {
+        fields.raw_event_id = to_string!(payload.raw_event_id)
+      } else {
+        fields.raw_event_id = ""
+      }
+
+      if exists(payload.logon_type) {
+        fields.logon_type = to_string!(payload.logon_type)
+      } else {
+        fields.logon_type = ""
+      }
+
+      if exists(payload.domain) {
+        fields.domain = to_string!(payload.domain)
+      } else {
+        fields.domain = ""
+      }
+
+      if exists(payload.auth_method) {
+        fields.auth_method = to_string!(payload.auth_method)
+      } else {
+        fields.auth_method = ""
+      }
+
+      if exists(payload.collector_name) {
+        fields.collector_name = to_string!(payload.collector_name)
+      } else {
+        fields.collector_name = "hayabusa-sim"
+      }
+
+      if exists(payload.scenario) {
+        fields.scenario = to_string!(payload.scenario)
+      }
+
+      fields.schema_version = .schema_version
+      .fields = fields
+
+      del(.file)
+      del(.source_type)
+
 sinks:
   nats_events_buffer:
     type: nats
     inputs:
-      - normalize
+      - normalize_generic
+      - normalize_synthetic_auth
     url: nats://nats:4222
-    subject: hayabusa.events.normalized
+    subject: security.events
     encoding:
       codec: json
     jetstream:
       enabled: true
-
-  clickhouse_events:
-    type: clickhouse
-    inputs:
-      - buffered_events
-    endpoint: http://clickhouse:8123
-    database: security
-    table: events
-    skip_unknown_fields: true
-
-  console:
-    type: console
-    inputs:
-      - buffered_events
-    encoding:
-      codec: json

@@ -5,6 +5,8 @@ severity: medium
 enabled: false
 threshold_op: gte
 threshold_value: 10
+alert_type: example_auth_detection
+window_minutes: 5
 # Optional suppression lists (comma-separated, case-insensitive):
 # suppression_computers_csv: "win-lab-01,win-lab-02"
 # suppression_users_csv: "svc_backup,svc_scanner"
@@ -12,7 +14,21 @@ threshold_value: 10
 # suppression_computer_expr: "lowerUTF8(ifNull(lock.fields['computer'], ''))"
 # suppression_user_expr: "lowerUTF8(ifNull(lock.fields['subject_user_name'], ''))"
 query: |
-  SELECT count()
-  FROM security.events
-  WHERE ts > now() - INTERVAL 5 MINUTE
+  SELECT
+    count() AS hits,
+    '' AS principal,
+    '' AS source_ip,
+    '' AS endpoint_id,
+    min(ts) AS window_start,
+    max(ts) AS window_end,
+    0 AS distinct_user_count,
+    0 AS distinct_ip_count,
+    'linux_ssh' AS source_kind,
+    'Example rule fired' AS reason,
+    'Replace this query with rule-specific evidence' AS evidence_summary,
+    'Example details payload' AS details,
+    toStartOfInterval(max(ts), INTERVAL {{WINDOW_MINUTES}} MINUTE) AS window_bucket
+  FROM security.auth_events
+  WHERE ts > now() - INTERVAL {{WINDOW_MINUTES}} MINUTE
+    AND event_type IN ('login', 'auth.login')
     AND {{SUPPRESSION_CONDITION}}

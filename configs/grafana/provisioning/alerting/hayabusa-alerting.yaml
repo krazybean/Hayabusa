@@ -124,6 +124,183 @@ groups:
           service: detection
           rule_id: windows_failed_logon_burst
         isPaused: false
+      - uid: haya-src-multi-user
+        title: Hayabusa Security Source Multi User Burst
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: hayabusa-clickhouse
+            model:
+              datasource:
+                type: grafana-clickhouse-datasource
+                uid: hayabusa-clickhouse
+              editorType: sql
+              format: 0
+              intervalMs: 1000
+              maxDataPoints: 43200
+              queryType: timeseries
+              rawSql: SELECT now() AS time, toFloat64(count()) AS value FROM security.alert_candidates WHERE ts > now() - INTERVAL 10 MINUTE AND rule_id = 'security_source_multi_user_burst'
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                name: Expression
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: classic_conditions
+        noDataState: OK
+        execErrState: Error
+        for: 0s
+        annotations:
+          summary: security_source_multi_user_burst candidates were produced in the last 10 minutes.
+        labels:
+          severity: high
+          service: detection
+          rule_id: security_source_multi_user_burst
+        isPaused: false
+      - uid: haya-user-multi-src
+        title: Hayabusa Security User Multi Source Burst
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: hayabusa-clickhouse
+            model:
+              datasource:
+                type: grafana-clickhouse-datasource
+                uid: hayabusa-clickhouse
+              editorType: sql
+              format: 0
+              intervalMs: 1000
+              maxDataPoints: 43200
+              queryType: timeseries
+              rawSql: SELECT now() AS time, toFloat64(count()) AS value FROM security.alert_candidates WHERE ts > now() - INTERVAL 10 MINUTE AND rule_id = 'security_user_multi_source_burst'
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                name: Expression
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: classic_conditions
+        noDataState: OK
+        execErrState: Error
+        for: 0s
+        annotations:
+          summary: security_user_multi_source_burst candidates were produced in the last 10 minutes.
+        labels:
+          severity: high
+          service: detection
+          rule_id: security_user_multi_source_burst
+        isPaused: false
+      - uid: haya-failed-then-success
+        title: Hayabusa Security Failed Then Success
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 900
+              to: 0
+            datasourceUid: hayabusa-clickhouse
+            model:
+              datasource:
+                type: grafana-clickhouse-datasource
+                uid: hayabusa-clickhouse
+              editorType: sql
+              format: 0
+              intervalMs: 1000
+              maxDataPoints: 43200
+              queryType: timeseries
+              rawSql: SELECT now() AS time, toFloat64(count()) AS value FROM security.alert_candidates WHERE ts > now() - INTERVAL 15 MINUTE AND rule_id = 'security_failed_then_success'
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                name: Expression
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: classic_conditions
+        noDataState: OK
+        execErrState: Error
+        for: 0s
+        annotations:
+          summary: security_failed_then_success candidates were produced in the last 15 minutes.
+        labels:
+          severity: high
+          service: detection
+          rule_id: security_failed_then_success
+        isPaused: false
 
 contactPoints:
   - orgId: 1

@@ -31,9 +31,9 @@ Build a local Docker Compose stack that proves:
 
 - Docker Compose boots the strict MVP stack
 - Vector accepts demo logs and syslog on `1514`
-- Vector accepts one Windows Fluent Bit forward lane on `24225`
+- Hayabusa now has a Windows collector path that uses Vector on the host and publishes to NATS
 - Vector publishes normalized events into JetStream
-- Vector consumes buffered events into `security.events`
+- `hayabusa-ingest` subscribes to `security.events` and writes envelopes into ClickHouse
 - ClickHouse exposes endpoint visibility through `security.endpoint_activity`
 - Detection polls ClickHouse every 30 seconds
 - Detection writes to `security.alert_candidates`
