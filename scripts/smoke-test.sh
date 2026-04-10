@@ -4,8 +4,9 @@ set -euo pipefail
 TIMEOUT_SECONDS="${SMOKE_TIMEOUT_SECONDS:-180}"
 SLEEP_SECONDS=2
 NATS_STREAM_NAME="${SMOKE_NATS_STREAM_NAME:-HAYABUSA_EVENTS}"
-NATS_CONSUMER_NAME="${SMOKE_NATS_CONSUMER_NAME:-VECTOR_CLICKHOUSE_WRITER}"
+NATS_CONSUMER_NAME="${SMOKE_NATS_CONSUMER_NAME:-HAYABUSA_INGEST}"
 ALERT_POLL_ATTEMPTS="${SMOKE_ALERT_POLL_ATTEMPTS:-40}"
+SMOKE_RULE_ID="${SMOKE_RULE_ID:-security_source_multi_user_burst}"
 
 timestamp() {
   date +"%H:%M:%S"
@@ -57,6 +58,23 @@ wait_for_detection() {
   return 1
 }
 
+wait_for_ingest() {
+  local elapsed=0
+  printf "[%s] Waiting for hayabusa-ingest\n" "$(timestamp)"
+
+  while (( elapsed < TIMEOUT_SECONDS )); do
+    if docker compose exec -T hayabusa-ingest sh -c "test -r /proc/1/status" >/dev/null 2>&1; then
+      printf "[%s] OK: hayabusa-ingest\n" "$(timestamp)"
+      return 0
+    fi
+    sleep "${SLEEP_SECONDS}"
+    elapsed=$((elapsed + SLEEP_SECONDS))
+  done
+
+  printf "[%s] ERROR: hayabusa-ingest did not become ready within %ss\n" "$(timestamp)" "${TIMEOUT_SECONDS}" >&2
+  return 1
+}
+
 query_scalar() {
   local sql="$1"
   curl -fsS "http://localhost:8123/" --data-binary "${sql}" | tr -d '\r\n'
@@ -64,24 +82,22 @@ query_scalar() {
 
 count_alert_sink_rule_hits() {
   docker compose logs alert-sink 2>/dev/null \
-    | awk '/payload path=\/alerts\/default/ && /security_failed_login_burst/ { count += 1 } END { print count + 0 }'
+    | awk -v rule_id="${SMOKE_RULE_ID}" '/payload path=\/alerts\/default/ && index($0, rule_id) > 0 { count += 1 } END { print count + 0 }'
 }
 
-send_failed_login_burst() {
-  local i
-  for i in 1 2 3 4 5 6; do
-    printf '<134>1 %s authhost sshd 10%d ID47 - Failed password for invalid user root from 10.0.0.%d port 22 ssh2\n' "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" "${i}" "${i}" \
-      | nc -u -w1 127.0.0.1 1514
-    sleep 1
-  done
+send_password_spray() {
+  ./scripts/load-synthetic-auth.sh --clear --scenario password-spray >/tmp/hayabusa-smoke-synthetic-auth.log
 }
 
 echo "Running Hayabusa MVP smoke test..."
 
 wait_for_http "ClickHouse" "http://localhost:8123/ping" "ok"
 wait_for_http "Vector" "http://localhost:8686/health"
+wait_for_ingest
+wait_for_http "Hayabusa API" "http://localhost:8080/health" "\"ok\":true"
+wait_for_http "Hayabusa Web" "http://localhost:3000/"
 wait_for_http "Alert Router" "http://localhost:5678/health" "\"ok\":true"
-wait_for_http "Grafana" "http://localhost:3000/api/health" "\"database\"[[:space:]]*:[[:space:]]*\"ok\""
+wait_for_http "Grafana" "http://localhost:3001/api/health" "\"database\"[[:space:]]*:[[:space:]]*\"ok\""
 wait_for_detection
 
 stream_info="$(run_nats_cli stream info "${NATS_STREAM_NAME}")"
@@ -102,7 +118,7 @@ fi
 
 events_before="$(query_scalar "SELECT count() FROM security.events FORMAT TabSeparated")"
 alert_hits_before="$(count_alert_sink_rule_hits)"
-send_failed_login_burst
+send_password_spray
 sleep 5
 events_after="$(query_scalar "SELECT count() FROM security.events FORMAT TabSeparated")"
 
@@ -116,7 +132,7 @@ fi
 candidate_count="0"
 attempt=0
 until (( attempt >= 20 )); do
-  candidate_count="$(query_scalar "SELECT count() FROM security.alert_candidates WHERE rule_id = 'security_failed_login_burst' AND ts > now() - INTERVAL 5 MINUTE FORMAT TabSeparated")"
+  candidate_count="$(query_scalar "SELECT count() FROM security.alert_candidates WHERE rule_id = '${SMOKE_RULE_ID}' AND ts > now() - INTERVAL 10 MINUTE FORMAT TabSeparated")"
   if [[ "${candidate_count}" =~ ^[0-9]+$ ]] && (( candidate_count > 0 )); then
     break
   fi

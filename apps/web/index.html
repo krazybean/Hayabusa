@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hayabusa Alerts</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Hayabusa demo console</p>
+          <h1>Suspicious login alerts, without writing SQL.</h1>
+          <p class="subhead">
+            Minimal local view over ClickHouse detections. Built for the Windows collector demo path.
+          </p>
+        </div>
+        <div class="status-card">
+          <span class="status-dot" id="status-dot"></span>
+          <div>
+            <strong id="status-text">Connecting</strong>
+            <span id="last-refresh">Waiting for API...</span>
+          </div>
+        </div>
+      </header>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Latest detections</p>
+            <h2>Alerts</h2>
+          </div>
+          <button id="refresh-button" type="button">Refresh now</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Rule</th>
+                <th>Severity</th>
+                <th>Endpoint</th>
+                <th>Summary</th>
+              </tr>
+            </thead>
+            <tbody id="alerts-body">
+              <tr>
+                <td colspan="5" class="empty">Loading alerts...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel secondary">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Recent auth events</p>
+            <h2>Pipeline input</h2>
+          </div>
+          <span class="hint">Auto-refreshes every 7 seconds</span>
+        </div>
+        <div id="events-list" class="events-list">
+          <p class="empty">Loading recent auth events...</p>
+        </div>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

@@ -45,8 +45,8 @@ services:
     environment:
       NATS_URL: nats://nats:4222
       NATS_STREAM_NAME: HAYABUSA_EVENTS
-      NATS_STREAM_SUBJECTS: "hayabusa.events.>"
-      NATS_CONSUMER_NAME: VECTOR_CLICKHOUSE_WRITER
+      NATS_STREAM_SUBJECTS: "events.auth,security.events"
+      NATS_CONSUMER_NAME: HAYABUSA_INGEST
       NATS_STREAM_MAX_BYTES: "268435456"
       NATS_STREAM_MAX_AGE: 24h
     volumes:
@@ -66,6 +66,7 @@ services:
       - "24225:24225"
     volumes:
       - ./configs/vector/vector.yaml:/etc/vector/vector.yaml:ro
+      - ./data/synthetic-auth:/var/lib/hayabusa/synthetic-auth
     depends_on:
       clickhouse:
         condition: service_healthy
@@ -81,11 +82,33 @@ services:
       retries: 10
     restart: unless-stopped
 
+  hayabusa-ingest:
+    build:
+      context: ./services/hayabusa-ingest
+    container_name: hayabusa-ingest
+    environment:
+      NATS_URL: nats://nats:4222
+      NATS_SUBJECT: security.events
+      NATS_STREAM: HAYABUSA_EVENTS
+      NATS_CONSUMER: HAYABUSA_INGEST
+      CLICKHOUSE_ENDPOINT: http://clickhouse:8123
+      CLICKHOUSE_DATABASE: security
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: ""
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      nats-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
   grafana:
     image: grafana/grafana-oss:12.4.2@sha256:83749231c3835e390a3144e5e940203e42b9589761f20ef3169c716e734ad505
     container_name: grafana
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
       GF_PLUGINS_PREINSTALL: grafana-clickhouse-datasource@4.14.0
     volumes:
@@ -95,10 +118,53 @@ services:
     depends_on:
       clickhouse:
         condition: service_healthy
+      hayabusa-ingest:
+        condition: service_started
       alert-sink:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  api:
+    image: node:22.22.2-alpine
+    container_name: hayabusa-api
+    command: ["node", "/app/server.js"]
+    ports:
+      - "8080:8080"
+    environment:
+      API_PORT: "8080"
+      CLICKHOUSE_URL: http://clickhouse:8123
+    volumes:
+      - ./services/api/server.js:/app/server.js:ro
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  web:
+    image: node:22.22.2-alpine
+    container_name: hayabusa-web
+    command: ["node", "/app/server.js"]
+    ports:
+      - "3000:3000"
+    environment:
+      WEB_PORT: "3000"
+    volumes:
+      - ./apps/web:/app:ro
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 20s
       timeout: 5s
       retries: 10
@@ -120,6 +186,8 @@ services:
         condition: service_healthy
       vector:
         condition: service_healthy
+      hayabusa-ingest:
+        condition: service_started
     healthcheck:
       test: ["CMD", "sh", "-c", "test -f /tmp/detection-heartbeat"]
       interval: 20s
