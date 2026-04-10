@@ -217,6 +217,9 @@ security-platform-starter-bundle.zip
 secrets/windows-forward-tls/*
 !secrets/windows-forward-tls/.gitkeep
 
+# Generated synthetic auth replay files
+data/synthetic-auth/*.jsonl
+
 # Marimo
 marimo/_static/
 marimo/_lsp/
