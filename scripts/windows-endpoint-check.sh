@@ -95,5 +95,10 @@ if (( event_count < MIN_EVENTS )); then
   exit 1
 fi
 
-latest_query="SELECT ts, ingest_source, fields['computer'] AS computer, fields['channel'] AS channel, fields['event_id'] AS event_id, message FROM security.events WHERE ingest_source='${INGEST_SOURCE}'${computer_filter} ORDER BY ts DESC LIMIT 10 FORMAT PrettyCompact"
+auth_filter=""
+if [[ -n "${EXPECTED_COMPUTER}" ]]; then
+  auth_filter=" AND lowerUTF8(host) = lowerUTF8('${EXPECTED_COMPUTER}')"
+fi
+
+latest_query="SELECT ts, ingest_source, host, user, src_ip, status, raw_event_id, message FROM security.auth_events WHERE ingest_source='${INGEST_SOURCE}'${auth_filter} ORDER BY ts DESC LIMIT 10 FORMAT PrettyCompact"
 run_clickhouse_query "${latest_query}"
