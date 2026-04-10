@@ -26,8 +26,12 @@ mkdir -p "${PACKAGE_DIR}/docs" "${PACKAGE_DIR}/vector"
 copy_file "${SOURCE_DIR}/bundle/README.md" "${PACKAGE_DIR}/README.md"
 copy_file "${SOURCE_DIR}/bundle/env.example" "${PACKAGE_DIR}/env.example"
 
-for script_name in install.ps1 configure.ps1 validate.ps1 start.ps1 stop.ps1 test-ingestion.ps1 collect-sample-events.ps1 emit-security-events.ps1 uninstall.ps1; do
+for script_name in configure.ps1 validate.ps1 test-ingestion.ps1 collect-sample-events.ps1 emit-security-events.ps1; do
   copy_file "${SOURCE_DIR}/scripts/${script_name}" "${PACKAGE_DIR}/${script_name}"
+done
+
+for script_name in install.ps1 start.ps1 stop.ps1 status.ps1 uninstall.ps1; do
+  copy_file "${ROOT_DIR}/scripts/windows/${script_name}" "${PACKAGE_DIR}/${script_name}"
 done
 
 copy_file "${SOURCE_DIR}/vector/vector.toml.tpl" "${PACKAGE_DIR}/vector/vector.toml.tpl"

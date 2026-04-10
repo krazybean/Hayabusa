@@ -1,53 +1,90 @@
-# Hayabusa Collector for Windows Test Bundle
+# Hayabusa Collector for Windows
 
-This bundle is the first practical handoff for testing Hayabusa on a real Windows host.
+This bundle installs the Hayabusa Windows Collector on a real Windows host.
 
 It is:
 
-- a preconfigured Windows collector wrapper for Hayabusa
+- a Windows service installer for Hayabusa auth telemetry
 - Vector under the hood
 - focused on Windows Security log auth events
-- meant for first-host validation and troubleshooting
+- designed to start automatically and send events to Hayabusa
 
 It is not:
 
-- a production installer
 - a fleet manager
 - a custom Windows agent
+- an MSI/GUI installer
 
 ## Bundle Contents
 
 ```text
-bundle/
+hayabusa-windows-collector/
   README.md
   env.example
   install.ps1
   start.ps1
   stop.ps1
-..\vector\vector.toml.tpl
-..\vector\README.md
-..\scripts\install.ps1
-..\scripts\configure.ps1
-..\scripts\validate.ps1
-..\scripts\collect-sample-events.ps1
-..\scripts\emit-security-events.ps1
-..\scripts\start.ps1
-..\scripts\stop.ps1
-..\scripts\uninstall.ps1
+  status.ps1
+  uninstall.ps1
+  validate.ps1
+  test-ingestion.ps1
+  collect-sample-events.ps1
+  emit-security-events.ps1
+  vector/vector.toml.tpl
+  docs/
 ```
 
-## Quick Use
+## Quick Install
 
-1. Install or stage `vector.exe` on the Windows host.
-2. Run `install.ps1` to create `C:\ProgramData\HayabusaCollector`.
-3. Run `configure.ps1` with the Hayabusa NATS URL if you did not already pass it to `install.ps1`.
-4. Run `validate.ps1`.
-5. Start the collector with `start.ps1` or run Vector interactively with the rendered `vector.toml`.
-6. Generate or inspect `4624` / `4625` events.
-7. Confirm rows arrive in Hayabusa with:
-   - `./scripts/windows-endpoint-check.sh`
-   - ClickHouse queries against `security.auth_events`
-8. Stop it with `stop.ps1` and clean up with `uninstall.ps1` if needed.
+Open PowerShell as Administrator from the extracted bundle directory:
+
+```powershell
+.\install.ps1 `
+  -NatsUrl "nats://192.168.1.109:4222" `
+  -Subject "security.events" `
+  -CollectorName "windows-test-01" `
+  -Environment "lab"
+```
+
+The installer:
+
+- creates `C:\ProgramData\HayabusaCollector`
+- downloads or stages `vector.exe`
+- downloads NSSM and registers `HayabusaCollector` as a Windows service
+- renders `vector.toml`
+- starts the service automatically
+
+No global execution policy changes are made. The service invokes PowerShell with `-ExecutionPolicy Bypass` only for the collector scripts.
+
+Expected success output:
+
+```text
+✔ Installed vector
+✔ Configured collector
+✔ Service registered
+✔ Service started
+✅ Hayabusa Collector is running and sending events
+```
+
+## Validate
+
+```powershell
+.\status.ps1
+.\validate.ps1 -NatsUrl "nats://192.168.1.109:4222"
+.\collect-sample-events.ps1
+```
+
+Generate or inspect `4624` / `4625` events, then confirm rows arrive in Hayabusa with:
+
+- `./scripts/windows-endpoint-check.sh`
+- ClickHouse queries against `security.auth_events`
+
+Stop or remove the collector:
+
+```powershell
+.\stop.ps1
+.\uninstall.ps1
+```
 
 ## How Windows events are collected
 
@@ -66,7 +103,7 @@ If this file receives JSON rows, the helper output made it through Vector normal
 If Vector connects but no rows arrive, run:
 
 ```powershell
-.\emit-security-events.ps1 -LookbackMinutes 60 -MaxEvents 200 -DebugSummary
+& "C:\ProgramData\HayabusaCollector\scripts\emit-security-events.ps1" -LookbackMinutes 60 -MaxEvents 200 -DebugSummary
 ```
 
 The debug counters explain whether events were dropped because of unsupported logon types or missing usernames.
