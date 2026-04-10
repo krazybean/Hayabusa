@@ -1,8 +1,18 @@
 # Windows Collector Quickstart
 
-Goal: get one real Windows auth event into Hayabusa in a few minutes.
+Goal: see suspicious activity on your machine in under 60 seconds, then validate a real Windows host lane.
 
-This is a test/evaluator path, not a production installer. Vector runs under the hood.
+Vector runs under the hood. The installer creates a Hayabusa Collector service so the Windows host starts forwarding auth events automatically.
+
+## New Quick Start Flow
+
+1. Start the Hayabusa stack.
+2. Open the UI: http://localhost:3000
+3. Click **Simulate Attack**.
+4. Watch Hayabusa detect the simulated brute-force pattern.
+5. Build and copy the Windows collector package.
+6. Run the Windows installer as Administrator.
+7. Trigger or wait for real Windows failed-login events to validate the collector path.
 
 ## 1. Start Hayabusa
 
@@ -28,7 +38,30 @@ Open:
 - API health: http://localhost:8080/health
 - Grafana: http://localhost:3001
 
-## 2. Build the Windows Collector Bundle
+## 2. Prove The Demo Path Without External Tools
+
+Open:
+
+```text
+http://localhost:3000
+```
+
+Click:
+
+```text
+Simulate Attack
+```
+
+Expected:
+
+- the API publishes a synthetic Windows failed-login burst to NATS
+- `hayabusa-ingest` writes those events into ClickHouse
+- the detection service writes an alert candidate shortly after its next poll
+- the UI shows a highlighted alert card and expands the details automatically
+
+This proves the local pipeline without SMB/RDP or any external client machine.
+
+## 3. Build the Windows Collector Bundle
 
 On the Hayabusa host:
 
@@ -44,59 +77,44 @@ dist/hayabusa-windows-collector.zip
 
 Extract it, then open PowerShell as Administrator in the extracted folder.
 
-## 3. Configure the Collector
+## 4. Install the Collector
 
 Replace `<HAYABUSA_HOST_IP>` with the IP address of the machine running Docker Compose:
 
 ```powershell
-Set-ExecutionPolicy -Scope Process Bypass
-
 .\install.ps1 `
   -NatsUrl "nats://<HAYABUSA_HOST_IP>:4222" `
-  -NatsSubject "security.events" `
+  -Subject "security.events" `
   -CollectorName "windows-test-01" `
-  -EnvironmentTag "demo"
+  -Environment "demo"
 ```
 
 Expected output includes:
 
 ```text
-[hayabusa-collector] Rendered collector config.
-Config path      : C:\ProgramData\HayabusaCollector\config\vector.toml
-Subject          : security.events
+✔ Installed vector
+✔ Configured collector
+✔ Service registered
+✔ Service started
+✅ Hayabusa Collector is running and sending events
 ```
 
-## 4. Validate Locally
+The installer does not change global execution policy. It runs collector scripts with `-ExecutionPolicy Bypass` only for the service invocation.
+
+## 5. Validate Locally
 
 ```powershell
+.\status.ps1
 .\validate.ps1
 ```
 
 Expected:
 
 - Security log is readable
-- Vector is found or a clear missing-Vector message is printed
+- Vector is installed under `C:\ProgramData\HayabusaCollector\bin`
+- `HayabusaCollector` service is running
 - NATS host/port is reachable
 - recent `4624` / `4625` events are visible or guidance is printed
-
-If Vector is missing, install Vector for Windows or place `vector.exe` under:
-
-```text
-C:\ProgramData\HayabusaCollector\bin\vector.exe
-```
-
-## 5. Start the Collector
-
-```powershell
-.\start.ps1
-```
-
-Expected:
-
-```text
-[hayabusa-collector] Starting Vector in the background.
-Debug events: C:\ProgramData\HayabusaCollector\logs\windows-auth-normalized.jsonl
-```
 
 ## 6. Generate a Useful Failed Login
 
@@ -135,9 +153,11 @@ Open:
 http://localhost:3000
 ```
 
-If a detection threshold is met, the alert appears in the Alerts table.
+If a detection threshold is met, the alert appears in the Alerts view.
 
 For the specific Windows failed-logon burst rule, generate enough failed Windows logons within the rule window, then wait for the detection poll interval.
+
+You can always click **Simulate Attack** in the UI to prove the alert path without generating real Windows failures.
 
 ## Troubleshooting
 

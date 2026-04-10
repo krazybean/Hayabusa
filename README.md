@@ -4,65 +4,95 @@
 [![docker-compose ready](https://img.shields.io/badge/docker--compose-ready-46f39a?labelColor=0b1718&color=46f39a)](MVP_RUNBOOK.md)
 [![License: MIT](https://img.shields.io/github/license/krazybean/Hayabusa?label=license)](LICENSE)
 
-> Self-hosted suspicious-login detection for servers.
+See suspicious activity on your machine in under 60 seconds.
 
-Hayabusa is a self-hosted security telemetry MVP focused on detecting suspicious login activity on servers.
+## What Is This?
+
+Hayabusa is a local-first security detection playground for developers and homelab users.
+
+It lets you simulate real-world suspicious login activity and watch it get detected instantly on a stack you can run with Docker Compose on your own machine.
 
 - Live site: https://krazybean.github.io/Hayabusa/
-- Focus: suspicious login detection on Linux SSH/syslog and one Windows collector lane
-- What this is: a small Docker Compose proof of `ingest -> store -> detect -> alert`
+- Positioning: local-first security detection playground
+- Audience: developers, self-hosters, and homelab tinkerers
+- Core path: `ingest -> store -> detect -> alert`
 
 ```text
 ingest -> store -> detect -> alert
 ```
 
-Today it proves one narrow path end to end with a local Docker Compose stack. It is not a finished product, not a full SIEM, and not Wazuh parity.
+Today it proves one narrow path end to end with a local Docker Compose stack. It is not a full SIEM, not Wazuh parity, and not an enterprise security platform.
+
+## Quickstart
+
+1. `docker compose up -d --build`
+2. run the Windows installer
+3. open the UI at `http://localhost:3000`
+4. click **Simulate Attack**
+
+Watch a brute-force-style login attack get detected in seconds.
+
+## Why Hayabusa?
+
+- No cloud required
+- No complex setup
+- Immediate feedback
+- Built for developers and homelabs
+
+## Demo
+
+The **Simulate Attack** flow publishes a synthetic Windows failed-login burst into the live pipeline. That means:
+
+- events are generated with the same normalized auth schema as real collector traffic
+- they move through NATS, `hayabusa-ingest`, ClickHouse, and the SQL detection runner
+- the UI then shows a **Failed Login Burst Detected** alert
+
+What that alert represents:
+
+- a short burst of failed logins against a Windows endpoint
+- the kind of pattern you would want to notice quickly in a homelab or local test machine
+- a guided first-success experience, not a fake mockup
 
 ## What Hayabusa Detects Right Now
 
 - repeated failed SSH-style login activity from syslog/demo traffic
 - repeated failed Windows logons from one real Windows host lane
+- synthetic failed login bursts for instant local demos
 - endpoint activity visibility from the events already stored in ClickHouse
-
-## What It Is
-
-- a reproducible stack for log ingestion, buffering, storage, SQL detections, Grafana alerting, and webhook delivery
-- a technical proof that suspicious-login telemetry can move from raw events to real alerts
-- a synthetic auth-validation lane that exercises the real normalized auth contract before live collectors are available
-- a base that can support both product direction and setup/integration services later
 
 ## Who It Is For
 
-- engineers who want a self-hosted proof of suspicious-login detection
-- security consultants who need a credible demoable baseline
-- small teams evaluating a focused ClickHouse-based telemetry path
+- developers who want to see security detections happen locally
+- homelab users who want a practical playground instead of a giant security stack
+- self-hosters who prefer a local-first, no-cloud setup
 
 ## What It Is Not
 
 - not a full SIEM
-- not Wazuh parity
-- not a control plane
+- not an enterprise SOC workflow tool
+- not a compliance platform
 - not multi-tenant
 - not HA or clustered
-- not a polished user-facing product
+- not trying to replace cloud security products
+
+## Core Experience
+
+1. start the stack with Docker Compose
+2. run the Windows collector installer on a local or lab machine
+3. open the UI
+4. click **Simulate Attack**
+5. watch Hayabusa detect it instantly
 
 ## Proven Today
 
 - syslog and demo events arrive in `security.events`
-- synthetic auth events can populate `security.auth_events` without live infrastructure
+- synthetic auth events populate `security.auth_events` without external tools
 - one Windows host lane exists via `vector-windows-endpoint`
 - a first-party-feeling Windows collector path exists while keeping Vector under the hood
 - detections are written to `security.alert_candidates`
+- the UI provides a guided first alert via **Simulate Attack**
 - Grafana evaluates alert rules from ClickHouse data
 - `alert-sink` receives firing and resolved webhook payloads
-
-## Demo Flow
-
-1. logs enter Hayabusa through Vector from syslog/demo traffic or from the Windows collector via NATS
-2. NATS JetStream buffers normalized events before they are stored in ClickHouse
-3. the detection service evaluates SQL rules on a schedule
-4. detection matches are written to `security.alert_candidates`
-5. Grafana fires an alert and `alert-sink` logs the webhook payload
 
 ## Current Stack
 
@@ -80,17 +110,50 @@ Today it proves one narrow path end to end with a local Docker Compose stack. It
 
 - `configs/`: service config, rules, and provisioning
 - `services/`: small custom runtime code
-- `scripts/`: bootstrap, validation, and operator helpers
-- `docs/`: architecture notes, runbooks, and the static Pages site
+- `scripts/`: bootstrap, validation, packaging, and operator helpers
+- `docs/`: runbooks, architecture notes, and the static Pages site
 
-## Quick Start
+## Try It In 60 Seconds
 
 ```bash
 docker compose up -d --build
-./scripts/smoke-test.sh
 ```
 
-Open the demo UI at `http://localhost:3000`.
+Then open:
+
+```text
+http://localhost:3000
+```
+
+Click **Simulate Attack**.
+
+Hayabusa will generate a realistic failed-login burst, push it through the live pipeline, and show the resulting alert in the UI within a few seconds.
+
+For a real Windows host, build the collector package and run the installer from an elevated PowerShell session:
+
+```bash
+./scripts/build-windows-collector-package.sh
+```
+
+```powershell
+.\install.ps1 `
+  -NatsUrl "nats://<HAYABUSA_HOST_IP>:4222" `
+  -Subject "security.events" `
+  -CollectorName "windows-test-01"
+```
+
+## Product Direction
+
+Hayabusa is now explicitly homelab-first and developer-first.
+
+That means:
+
+- optimize for time-to-first-value
+- keep onboarding guided and obvious
+- avoid enterprise feature creep
+- prefer local demos over abstract platform promises
+
+This is not a dashboard. This is a guided first-success experience.
 
 ## Daily Dev Cycle
 
@@ -191,11 +254,11 @@ Expected:
 
 ## Deferred Scope
 
-- authentication and user accounts
-- API layer
-- custom frontend
-- clustering or HA
+- enterprise security team workflows
 - compliance/reporting
+- auth, user accounts, and RBAC
+- multi-tenant control-plane features
+- clustering or HA
 - endpoint fleet management beyond one real Windows host path
 - advanced control-plane workflows
 - external alert routing beyond the local webhook sink
