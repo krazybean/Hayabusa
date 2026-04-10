@@ -138,11 +138,18 @@ services:
     environment:
       API_PORT: "8080"
       CLICKHOUSE_URL: http://clickhouse:8123
+      NATS_URL: nats://nats:4222
+      NATS_SUBJECT: security.events
+      TEST_EVENT_BURST_COUNT: "5"
     volumes:
       - ./services/api/server.js:/app/server.js:ro
     depends_on:
       clickhouse:
         condition: service_healthy
+      nats:
+        condition: service_healthy
+      nats-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 20s
@@ -177,7 +184,7 @@ services:
     environment:
       CLICKHOUSE_URL: http://clickhouse:8123/
       RULE_DIR: /etc/hayabusa/rules
-      DETECTION_POLL_SECONDS: "30"
+      DETECTION_POLL_SECONDS: "5"
     volumes:
       - ./services/detection/run.sh:/app/run.sh:ro
       - ./configs/rules/mvp:/etc/hayabusa/rules:ro

@@ -10,22 +10,55 @@
     <main class="shell">
       <header class="hero">
         <div>
-          <p class="eyebrow">Hayabusa demo console</p>
-          <h1>Suspicious login alerts, without writing SQL.</h1>
+          <p class="eyebrow">Local-first security playground</p>
+          <h1>See suspicious activity on your machine in under 60 seconds.</h1>
           <p class="subhead">
-            Minimal local view over ClickHouse detections. Built for the Windows collector demo path.
+            Built for developers and homelab users. Click once to simulate an attack and watch Hayabusa catch it locally.
           </p>
-        </div>
-        <div class="status-card">
-          <span class="status-dot" id="status-dot"></span>
-          <div>
-            <strong id="status-text">Connecting</strong>
-            <span id="last-refresh">Waiting for API...</span>
+          <div class="hero-actions">
+            <button id="generate-button" class="primary-action" type="button">Simulate Attack</button>
+            <span id="generate-status" class="action-status">Generate a realistic failed login attack and watch it get detected.</span>
+          </div>
+          <p class="identity-line">Local-first. No cloud. Built for developers.</p>
+          <div id="simulation-progress" class="progress-card" hidden>
+            <ol>
+              <li data-step="event">Event generated</li>
+              <li data-step="pipeline">Processed by pipeline</li>
+              <li data-step="detection">Detection triggered</li>
+              <li data-step="alert">Alert created</li>
+            </ol>
           </div>
         </div>
+        <details class="status-card" aria-live="polite">
+          <summary class="status-row">
+            <span class="status-dot" id="status-dot"></span>
+            <div>
+              <strong id="status-text">Connecting</strong>
+              <span id="last-refresh">Advanced health</span>
+            </div>
+          </summary>
+          <dl class="health-grid">
+            <div>
+              <dt>Collector</dt>
+              <dd id="collector-status">Unknown</dd>
+            </div>
+            <div>
+              <dt>NATS</dt>
+              <dd id="nats-status">Checking</dd>
+            </div>
+            <div>
+              <dt>ClickHouse</dt>
+              <dd id="clickhouse-status">Checking</dd>
+            </div>
+            <div>
+              <dt>Last event</dt>
+              <dd id="last-event">No recent events</dd>
+            </div>
+          </dl>
+        </details>
       </header>
 
-      <section class="panel">
+      <section class="panel alerts-panel">
         <div class="panel-head">
           <div>
             <p class="eyebrow">Latest detections</p>
@@ -33,23 +66,8 @@
           </div>
           <button id="refresh-button" type="button">Refresh now</button>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Time</th>
-                <th>Rule</th>
-                <th>Severity</th>
-                <th>Endpoint</th>
-                <th>Summary</th>
-              </tr>
-            </thead>
-            <tbody id="alerts-body">
-              <tr>
-                <td colspan="5" class="empty">Loading alerts...</td>
-              </tr>
-            </tbody>
-          </table>
+        <div id="alerts-body" class="alerts-list">
+          <div class="empty">Loading alerts...</div>
         </div>
       </section>
 
@@ -57,9 +75,9 @@
         <div class="panel-head">
           <div>
             <p class="eyebrow">Recent auth events</p>
-            <h2>Pipeline input</h2>
+            <h2>Activity Detected</h2>
           </div>
-          <span class="hint">Auto-refreshes every 7 seconds</span>
+          <span class="hint">Auto-refreshes every 3 seconds</span>
         </div>
         <div id="events-list" class="events-list">
           <p class="empty">Loading recent auth events...</p>
@@ -67,6 +85,7 @@
       </section>
     </main>
 
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
     <script src="/app.js"></script>
   </body>
 </html>
