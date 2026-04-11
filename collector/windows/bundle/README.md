@@ -40,7 +40,7 @@ Open PowerShell as Administrator from the extracted bundle directory:
 
 ```powershell
 .\install.ps1 `
-  -NatsUrl "nats://192.168.1.109:4222" `
+  -NatsUrl "nats://<HAYABUSA_HOST_IP>:4222" `
   -Subject "security.events" `
   -CollectorName "windows-test-01" `
   -Environment "lab"
@@ -70,7 +70,7 @@ Expected success output:
 
 ```powershell
 .\status.ps1
-.\validate.ps1 -NatsUrl "nats://192.168.1.109:4222"
+.\validate.ps1 -NatsUrl "nats://<HAYABUSA_HOST_IP>:4222"
 .\collect-sample-events.ps1
 ```
 

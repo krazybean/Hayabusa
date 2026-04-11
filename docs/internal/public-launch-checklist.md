@@ -1,3 +1,5 @@
+# Internal Only — Not User-Facing
+
 # Public Launch Checklist
 
 Use this before announcing the repository.
@@ -34,7 +36,7 @@ Confirm the public entry points are aligned:
 sed -n '1,220p' README.md
 sed -n '1,220p' MVP_RUNBOOK.md
 sed -n '1,220p' WINDOWS_REAL_HOST_RUNBOOK.md
-sed -n '1,220p' docs/public-launch-checklist.md
+sed -n '1,220p' docs/internal/public-launch-checklist.md
 ```
 
 Expected:

@@ -1,3 +1,5 @@
+# Internal Only — Not User-Facing
+
 # MVP Plan
 
 ## Objective
