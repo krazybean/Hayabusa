@@ -39,29 +39,30 @@
       <main>
         <section id="top" class="hero">
           <div class="hero-copy">
-            <p class="section-kicker">v1.0.0 • MVP • Public deployment</p>
+            <p class="section-kicker">v1.0.0 • local-first • homelab-ready</p>
             <h1>
-              Detect suspicious
+              See suspicious
               <br />
-              login activity in
+              activity on your
               <br />
-              minutes — without a
-              <span class="accent-text">SIEM.</span>
+              machine in under
+              <br />
+              <span class="accent-text">60 seconds.</span>
             </h1>
             <p class="hero-subtitle">
               A local-first security detection playground for developers and homelab users.
-              Simulate suspicious login activity and watch Hayabusa detect it on your own machine.
+              Run it with Docker Compose, click one button, and watch Hayabusa detect suspicious login activity on your own machine.
             </p>
 
             <div class="hero-actions">
-              <a class="button primary" href="https://github.com/krazybean/Hayabusa/blob/main/MVP_RUNBOOK.md" target="_blank" rel="noreferrer">Run the MVP locally</a>
-              <a class="button secondary" href="#story">See how detection works</a>
-              <a class="text-link" href="https://github.com/krazybean/Hayabusa/blob/main/WINDOWS_REAL_HOST_RUNBOOK.md" target="_blank" rel="noreferrer">Read the runbook</a>
+              <a class="button primary" href="https://github.com/krazybean/Hayabusa/blob/main/MVP_RUNBOOK.md" target="_blank" rel="noreferrer">Start locally</a>
+              <a class="button secondary" href="#story">See the flow</a>
+              <a class="text-link" href="https://github.com/krazybean/Hayabusa/blob/main/docs/windows-collector-quickstart.md" target="_blank" rel="noreferrer">Windows quickstart</a>
             </div>
 
             <p class="signal-line">
               <span class="signal-dot"></span>
-              Detection triggered: Failed login burst (6 attempts)
+              Detection triggered: Failed login burst on a local machine
             </p>
 
             <div class="terminal-panel">
@@ -156,11 +157,11 @@
               <h2>Focused detection instead of platform sprawl.</h2>
 
               <div class="scope-group">
-                <h3>Detects brute-force login attempts across distributed SSH nodes</h3>
+                <h3>Detects suspicious login bursts without burying you in platform sprawl</h3>
                 <ul>
                   <li>Correlates repeated failed SSH-style logins over short windows</li>
                   <li>Highlights burst behavior instead of isolated noisy failures</li>
-                  <li>Identifies impossible travel patterns for RDP accounts</li>
+                  <li>Supports one Windows auth lane for quick local validation</li>
                   <li>Flags suspicious authentication bursts in real time</li>
                 </ul>
               </div>
@@ -180,15 +181,15 @@
               <div class="matrix-block">
                 <p class="matrix-title">What works today (proven)</p>
                 <p>
-                  Focused, high-signal ingest, core data ingestion, activity and detection views,
-                  and practical depth is specific login telemetry over broad, shallow coverage.
+                  Focused, high-signal ingest, fast local feedback, guided alert visibility,
+                  and practical depth around suspicious login telemetry instead of broad, shallow coverage.
                 </p>
               </div>
               <div class="matrix-block matrix-block-muted">
                 <p class="matrix-title">What’s intentionally missing (for now)</p>
                 <p>
-                  Deferred: full SIEM scope, GUI-heavy rule builders, agent management, compliance
-                  packs, and broad platform abstractions for unsupported workflows.
+                  Deferred: full SIEM scope, GUI-heavy rule builders, compliance packs,
+                  enterprise control-plane features, and broad platform abstractions for unsupported workflows.
                 </p>
               </div>
             </aside>
@@ -232,13 +233,13 @@
 
         <section class="band band-final-cta">
           <p class="final-kicker">See a real login attack get detected on your machine.</p>
-          <h2>Run Hayabusa locally in under 10 minutes.</h2>
+          <h2>Spin up Hayabusa and see your first alert fast.</h2>
           <p class="final-copy">
-            Built for developers, self-hosters, and homelab users who want immediate local feedback without cloud dependencies.
+            Built for developers, self-hosters, and homelab users who want immediate local feedback without cloud dependencies or enterprise overhead.
           </p>
           <div class="hero-actions hero-actions-centered">
-            <a class="button primary" href="https://github.com/krazybean/Hayabusa/blob/main/MVP_RUNBOOK.md" target="_blank" rel="noreferrer">Run the MVP locally</a>
-            <a class="button secondary" href="https://github.com/krazybean/Hayabusa/blob/main/WINDOWS_REAL_HOST_RUNBOOK.md" target="_blank" rel="noreferrer">Read the runbook</a>
+            <a class="button primary" href="https://github.com/krazybean/Hayabusa/blob/main/MVP_RUNBOOK.md" target="_blank" rel="noreferrer">Run locally</a>
+            <a class="button secondary" href="https://github.com/krazybean/Hayabusa/blob/main/docs/windows-collector-quickstart.md" target="_blank" rel="noreferrer">Windows quickstart</a>
           </div>
         </section>
       </main>
