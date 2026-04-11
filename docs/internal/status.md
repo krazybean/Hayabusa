@@ -1,3 +1,5 @@
+# Internal Only — Not User-Facing
+
 # Hayabusa Status
 
 Last updated: 2026-04-09 (America/Chicago)

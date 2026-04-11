@@ -248,9 +248,9 @@ Expected:
 - [collector/windows/docs/windows-real-host-test.md](collector/windows/docs/windows-real-host-test.md): short first-live-host Windows test walkthrough
 - [collector/windows/bundle/README.md](collector/windows/bundle/README.md): handoff bundle notes for a Windows tester
 - [scripts/build-windows-collector-package.sh](scripts/build-windows-collector-package.sh): assemble a zip-ready Windows evaluator bundle in `dist/`
-- [docs/public-launch-checklist.md](docs/public-launch-checklist.md): final public repo hygiene and pre-announcement checks
 - [docs/canonical-event-schema.md](docs/canonical-event-schema.md): raw event envelope and auth view explanation
 - [docs/synthetic-auth.md](docs/synthetic-auth.md): synthetic auth scenarios, loader flow, and validation queries
+- [SECURITY.md](SECURITY.md): how to report vulnerabilities responsibly
 
 ## Deferred Scope
 
