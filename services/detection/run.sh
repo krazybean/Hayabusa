@@ -2,6 +2,9 @@
 set -eu
 
 RULE_DIR="${RULE_DIR:-/etc/hayabusa/rules}"
+RULE_SQL_DIR="${RULE_SQL_DIR:-/etc/hayabusa/detections/rules}"
+RULE_METADATA_DIR="${RULE_METADATA_DIR:-/etc/hayabusa/detections/metadata}"
+RULE_REGISTRY_LOADER="${RULE_REGISTRY_LOADER:-/app/load-detection-rules.sh}"
 CLICKHOUSE_URL="${CLICKHOUSE_URL:-http://clickhouse:8123/}"
 DETECTION_POLL_SECONDS="${DETECTION_POLL_SECONDS:-30}"
 HEARTBEAT_FILE="${HEARTBEAT_FILE:-/tmp/detection-heartbeat}"
@@ -31,21 +34,6 @@ yaml_value() {
       gsub(/^["'"'"']|["'"'"']$/, "", $0)
       print $0
       exit
-    }
-  ' "${file}"
-}
-
-yaml_query_block() {
-  file="$1"
-  awk '
-    /^query:[[:space:]]*\|[[:space:]]*$/ { in_query=1; next }
-    in_query == 1 {
-      if ($0 ~ /^  /) {
-        sub(/^  /, "", $0)
-        print $0
-        next
-      }
-      in_query=0
     }
   ' "${file}"
 }
@@ -267,13 +255,47 @@ evaluate_threshold() {
   esac
 }
 
+find_rule_file_by_id() {
+  target_rule_id="$1"
+  for candidate_file in "${RULE_DIR}"/*.yaml; do
+    [ -f "${candidate_file}" ] || continue
+    candidate_rule_id="$(yaml_value "${candidate_file}" "id")"
+    if [ "${candidate_rule_id}" = "${target_rule_id}" ]; then
+      printf '%s' "${candidate_file}"
+      return 0
+    fi
+  done
+  return 1
+}
+
+list_enabled_sql_rules() {
+  if [ -f "${RULE_REGISTRY_LOADER}" ]; then
+    if output="$(
+      RULE_SQL_DIR="${RULE_SQL_DIR}" \
+      RULE_METADATA_DIR="${RULE_METADATA_DIR}" \
+      /bin/sh "${RULE_REGISTRY_LOADER}"
+    )"; then
+      printf '%s\n' "${output}"
+      return 0
+    fi
+    log "Rule registry loader failed (${RULE_REGISTRY_LOADER}); falling back to all SQL rules (fail-open)."
+  else
+    log "Rule registry loader not found (${RULE_REGISTRY_LOADER}); falling back to all SQL rules (fail-open)."
+  fi
+
+  for query_file in "${RULE_SQL_DIR}"/*.sql; do
+    [ -f "${query_file}" ] || continue
+    printf '%s\n' "${query_file}"
+  done
+}
+
 run_rule() {
   rule_file="$1"
+  query_file="$2"
 
   rule_id="$(yaml_value "${rule_file}" "id")"
   rule_name="$(yaml_value "${rule_file}" "name")"
   severity="$(yaml_value "${rule_file}" "severity")"
-  enabled="$(yaml_value "${rule_file}" "enabled")"
   threshold_op="$(yaml_value "${rule_file}" "threshold_op")"
   threshold_value="$(yaml_value "${rule_file}" "threshold_value")"
   window_minutes="$(yaml_value "${rule_file}" "window_minutes")"
@@ -287,12 +309,10 @@ run_rule() {
   suppression_users_csv="$(yaml_value "${rule_file}" "suppression_users_csv")"
   suppression_computer_expr="$(yaml_value "${rule_file}" "suppression_computer_expr")"
   suppression_user_expr="$(yaml_value "${rule_file}" "suppression_user_expr")"
-  query_block="$(yaml_query_block "${rule_file}")"
 
   [ -n "${rule_id}" ] || { log "Skipping ${rule_file}: missing id"; return 0; }
   [ -n "${rule_name}" ] || { log "Skipping ${rule_file}: missing name"; return 0; }
   [ -n "${severity}" ] || severity="medium"
-  [ -n "${enabled}" ] || enabled="false"
   [ -n "${threshold_op}" ] || threshold_op="gte"
   [ -n "${threshold_value}" ] || threshold_value="1"
   [ -n "${window_minutes}" ] || window_minutes="5"
@@ -305,12 +325,14 @@ run_rule() {
   [ -n "${suppression_computer_expr}" ] || suppression_computer_expr="lowerUTF8(ifNull(fields['computer'], ifNull(fields['hostname'], '')))"
   [ -n "${suppression_user_expr}" ] || suppression_user_expr="lowerUTF8(ifNull(fields['user'], ifNull(fields['username'], ifNull(fields['subject_user_name'], ifNull(fields['target_user_name'], '')))))"
 
-  if [ "${enabled}" != "true" ]; then
+  if [ ! -f "${query_file}" ]; then
+    log "Skipping ${rule_id}: missing query file ${query_file}"
     return 0
   fi
 
+  query_block="$(cat "${query_file}")"
   if [ -z "${query_block}" ]; then
-    log "Skipping ${rule_id}: missing query block"
+    log "Skipping ${rule_id}: empty query file ${query_file}"
     return 0
   fi
 
@@ -484,18 +506,23 @@ VALUES
 
 main() {
   ensure_schema
-  log "Detection service started. polling=${DETECTION_POLL_SECONDS}s rules=${RULE_DIR}"
+  log "Detection service started. polling=${DETECTION_POLL_SECONDS}s rules=${RULE_DIR} sql_rules=${RULE_SQL_DIR} metadata=${RULE_METADATA_DIR}"
 
   while :; do
     found=0
-    for rule_file in "${RULE_DIR}"/*.yaml; do
-      if [ -f "${rule_file}" ]; then
-        found=1
-        run_rule "${rule_file}" || true
+    for query_file in $(list_enabled_sql_rules); do
+      [ -f "${query_file}" ] || continue
+      found=1
+      rule_id="$(basename "${query_file}" .sql)"
+      rule_file="$(find_rule_file_by_id "${rule_id}" || true)"
+      if [ -z "${rule_file}" ]; then
+        log "Skipping ${query_file}: no rule config with id=${rule_id} found in ${RULE_DIR}"
+        continue
       fi
+      run_rule "${rule_file}" "${query_file}" || true
     done
     if [ "${found}" -eq 0 ]; then
-      log "No rule files found in ${RULE_DIR}"
+      log "No enabled SQL rule files found in ${RULE_SQL_DIR}"
     fi
 
     date -u +"%Y-%m-%dT%H:%M:%SZ" > "${HEARTBEAT_FILE}"

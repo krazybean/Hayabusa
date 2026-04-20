@@ -1,0 +1,4 @@
+id: security_failed_login_burst
+description: Detect repeated failed logins from syslog-style messages in the last minute.
+severity: medium
+enabled: true

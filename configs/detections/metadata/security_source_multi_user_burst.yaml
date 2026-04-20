@@ -1,0 +1,4 @@
+id: security_source_multi_user_burst
+description: Detect one source IP failing logins against multiple usernames in a short window.
+severity: high
+enabled: true

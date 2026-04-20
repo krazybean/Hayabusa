@@ -184,10 +184,16 @@ services:
     environment:
       CLICKHOUSE_URL: http://clickhouse:8123/
       RULE_DIR: /etc/hayabusa/rules
+      RULE_SQL_DIR: /etc/hayabusa/detections/rules
+      RULE_METADATA_DIR: /etc/hayabusa/detections/metadata
+      RULE_REGISTRY_LOADER: /app/load-detection-rules.sh
       DETECTION_POLL_SECONDS: "5"
     volumes:
       - ./services/detection/run.sh:/app/run.sh:ro
+      - ./scripts/load-detection-rules.sh:/app/load-detection-rules.sh:ro
       - ./configs/rules/mvp:/etc/hayabusa/rules:ro
+      - ./configs/detections/rules:/etc/hayabusa/detections/rules:ro
+      - ./configs/detections/metadata:/etc/hayabusa/detections/metadata:ro
     depends_on:
       clickhouse:
         condition: service_healthy

@@ -1,0 +1,4 @@
+id: windows_failed_logon_burst
+description: Detect repeated Windows failed logons from one real endpoint in the last 5 minutes.
+severity: medium
+enabled: true

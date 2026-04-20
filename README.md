@@ -6,23 +6,6 @@
 
 See suspicious activity on your machine in under 60 seconds.
 
-## What Is This?
-
-Hayabusa is a local-first security detection playground for developers and homelab users.
-
-It lets you simulate real-world suspicious login activity and watch it get detected instantly on a stack you can run with Docker Compose on your own machine.
-
-- Live site: https://krazybean.github.io/Hayabusa/
-- Positioning: local-first security detection playground
-- Audience: developers, self-hosters, and homelab tinkerers
-- Core path: `ingest -> store -> detect -> alert`
-
-```text
-ingest -> store -> detect -> alert
-```
-
-Today it proves one narrow path end to end with a local Docker Compose stack. It is not a full SIEM, not Wazuh parity, and not an enterprise security platform.
-
 ## Quickstart
 
 1. `docker compose up -d --build`
@@ -30,7 +13,24 @@ Today it proves one narrow path end to end with a local Docker Compose stack. It
 3. open the UI at `http://localhost:3000`
 4. click **Simulate Attack**
 
-Watch a brute-force-style login attack get detected in seconds.
+Watch a brute-force attack get detected instantly.
+
+## What Is Hayabusa?
+
+Hayabusa is a local-first security detection playground.
+
+It lets you simulate real-world attacks and watch them get detected in real time through a full local pipeline you can run with Docker Compose.
+
+Local-first. No cloud. Built for developers.
+
+## What Happens When You Click "Simulate Attack"?
+
+- a realistic failed login burst is generated
+- the event flows through `Vector -> NATS -> hayabusa-ingest -> ClickHouse`
+- a SQL detection rule triggers
+- an alert appears in the UI
+
+This mirrors how Hayabusa detects a real brute-force login pattern.
 
 ## Why Hayabusa?
 
@@ -38,6 +38,11 @@ Watch a brute-force-style login attack get detected in seconds.
 - No complex setup
 - Immediate feedback
 - Built for developers and homelabs
+
+- Live site: https://krazybean.github.io/Hayabusa/
+- Core path: `ingest -> store -> detect -> alert`
+
+Today it proves one narrow path end to end with a local Docker Compose stack. It is not a full SIEM, not Wazuh parity, and not an enterprise security platform.
 
 ## Demo
 
