@@ -1,0 +1,53 @@
+WITH recent_failures AS
+(
+  SELECT
+    ts,
+    user AS principal,
+    src_ip AS source_ip,
+    host AS endpoint_id,
+    source_kind
+  FROM security.auth_events
+  WHERE ts > now() - INTERVAL {{WINDOW_MINUTES}} MINUTE
+    AND status = 'failure'
+    AND source_kind = 'linux_ssh'
+    AND ingest_source != 'vector-windows-endpoint'
+)
+SELECT
+  hits,
+  principal,
+  source_ip,
+  endpoint_id,
+  window_start,
+  window_end,
+  1 AS distinct_user_count,
+  1 AS distinct_ip_count,
+  source_kind,
+  concat('Repeated failed logins for account ', principal, ' from ', source_ip, ' on ', endpoint_id) AS reason,
+  concat(toString(hits), ' failed attempts within ', toString({{WINDOW_MINUTES}}), ' minutes') AS evidence_summary,
+  concat(
+    '{"principal":"', principal,
+    '","source_ip":"', source_ip,
+    '","endpoint_id":"', endpoint_id,
+    '","failed_attempts":', toString(hits),
+    ',"window_minutes":', toString({{WINDOW_MINUTES}}),
+    '}'
+  ) AS details,
+  toStartOfInterval(window_end, INTERVAL {{WINDOW_MINUTES}} MINUTE) AS window_bucket
+FROM
+(
+  SELECT
+    principal,
+    source_ip,
+    endpoint_id,
+    source_kind,
+    count() AS hits,
+    min(ts) AS window_start,
+    max(ts) AS window_end
+  FROM recent_failures
+  WHERE principal != ''
+    AND source_ip != ''
+    AND {{SUPPRESSION_CONDITION}}
+  GROUP BY principal, source_ip, endpoint_id, source_kind
+  ORDER BY hits DESC, window_end DESC
+  LIMIT 1
+)

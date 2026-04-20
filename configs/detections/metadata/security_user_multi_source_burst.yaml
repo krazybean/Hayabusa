@@ -1,0 +1,4 @@
+id: security_user_multi_source_burst
+description: Detect one account receiving repeated failed logins from multiple source IPs.
+severity: high
+enabled: true

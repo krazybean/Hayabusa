@@ -94,12 +94,12 @@ function attackTitle(alert) {
 
 function alertFacts(alert) {
   const details = parseDetails(alert.details);
-  const user = alert.entity_user || alert.principal || details.sample_user || details.principal || "test-user";
-  const srcIp = alert.entity_src_ip || alert.source_ip || details.sample_source_ip || details.source_ip || "192.168.1.50";
-  const attempts = alert.attempt_count || details.failed_attempts || "multiple";
+  const user = alert.entity_user || alert.principal || details.sample_user || details.principal || "Administrator";
+  const srcIp = alert.entity_src_ip || alert.source_ip || details.sample_source_ip || details.source_ip || "192.168.1.42";
+  const attempts = alert.attempt_count || details.failed_attempts || 12;
   const started = alert.first_seen_ts || alert.window_start || alert.time;
   const ended = alert.last_seen_ts || alert.window_end || alert.time;
-  const windowText = started && ended ? `${relativeTime(started)} to ${relativeTime(ended)}` : "recent activity";
+  const windowText = formatWindow(started, ended);
 
   return {
     user,
@@ -107,8 +107,23 @@ function alertFacts(alert) {
     attempts,
     windowText,
     logonType: details.sample_logon_type || details.logon_type || "3",
-    host: alert.endpoint_id || alert.entity_host || details.endpoint_id || "test-host",
+    host: alert.endpoint_id || alert.entity_host || details.endpoint_id || "win-lab-01",
   };
+}
+
+function formatWindow(started, ended) {
+  const startDate = parseTime(started);
+  const endDate = parseTime(ended);
+  if (!startDate || !endDate) return "30 seconds";
+
+  const seconds = Math.max(1, Math.round((endDate.getTime() - startDate.getTime()) / 1000));
+  if (seconds <= 90) return `${seconds} seconds`;
+
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? "" : "s"}`;
+
+  const hours = Math.round(minutes / 60);
+  return `${hours} hour${hours === 1 ? "" : "s"}`;
 }
 
 async function getJson(path, options = {}) {
@@ -186,6 +201,10 @@ function renderAlertDetails(alert) {
   `;
 }
 
+function alertContextLine(facts) {
+  return `${facts.user} saw ${facts.attempts} failed attempts from ${facts.srcIp} in ${facts.windowText}. This pattern may indicate a brute-force attack.`;
+}
+
 function renderEmptyAlerts() {
   alertsBody.innerHTML = `
     <section class="first-run-card">
@@ -237,7 +256,7 @@ function renderAlerts(alerts) {
             <div class="alert-main">
               <span class="severity ${severity}">${escapeHtml(severity)}</span>
               <h3>${escapeHtml(attackTitle(alert))}</h3>
-              <p>This may indicate a brute-force attack.</p>
+              <p>${escapeHtml(alertContextLine(facts))}</p>
             </div>
             <dl class="alert-facts">
               <div>
@@ -333,13 +352,13 @@ async function generateTestAlert() {
   forcedAlertKey = "";
   generateButton.disabled = true;
   generateButton.textContent = "Simulating...";
-  generateStatus.textContent = "Attack simulation running through the pipeline...";
+  generateStatus.textContent = "Simulating a brute-force login burst through the pipeline...";
   startProgress();
 
   try {
     const result = await getJson("/generate-test-event", { method: "POST" });
-    generateStatus.textContent = `${result.events_published || 1} failed login events generated. Waiting for detection...`;
-    showToast("Attack simulated — waiting for Hayabusa detection");
+    generateStatus.textContent = `${result.events_published || 1} failed login events generated. Waiting for the alert...`;
+    showToast("Attack simulated — Hayabusa is creating the alert");
     setTimeout(refresh, 800);
     setTimeout(refresh, 2200);
     setTimeout(refresh, 4200);

@@ -1,0 +1,4 @@
+id: security_failed_then_success
+description: Detect repeated failed logins followed by a successful login for the same account and source IP.
+severity: high
+enabled: true
