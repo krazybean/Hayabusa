@@ -235,7 +235,7 @@ FORMAT JSONEachRow
   jsonResponse(req, res, 200, { events: rows });
 }
 
-async function handleHealth(_req, res) {
+async function handleHealth(req, res) {
   const [natsConnected, clickhouseHealth] = await Promise.all([
     checkNats(),
     queryClickHouse(`
@@ -257,7 +257,7 @@ FORMAT JSONEachRow
     last_event_ts: lastEventTs,
     ingest_rate: Number(clickhouseHealth.row.ingest_rate || 0),
     collector_status: lastEventTs ? "connected" : "unknown",
-    error: clickhouseHealth.error || "",
+    error: clickhouseHealth.ok ? "" : "clickhouse unavailable",
   });
 }
 
