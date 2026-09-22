@@ -1,6 +1,6 @@
 # Hayabusa
 
-[![Dev MVP Validation](https://github.com/krazybean/Hayabusa/actions/workflows/dev-mvp-validation.yml/badge.svg?branch=dev)](https://github.com/krazybean/Hayabusa/actions/workflows/dev-mvp-validation.yml)
+[![Hayabusa Validation](https://github.com/krazybean/Hayabusa/actions/workflows/dev-mvp-validation.yml/badge.svg?branch=main)](https://github.com/krazybean/Hayabusa/actions/workflows/dev-mvp-validation.yml)
 [![docker-compose ready](https://img.shields.io/badge/docker--compose-ready-46f39a?labelColor=0b1718&color=46f39a)](MVP_RUNBOOK.md)
 [![License: MIT](https://img.shields.io/github/license/krazybean/Hayabusa?label=license)](LICENSE)
 
