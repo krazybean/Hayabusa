@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/url"
 	"os"
@@ -215,8 +216,12 @@ func decodeAndValidateEvent(data []byte) (eventEnvelope, error) {
 	if err := decoder.Decode(&event); err != nil {
 		return eventEnvelope{}, permanentEventErrorf("invalid json: %v", err)
 	}
-	if decoder.More() {
-		return eventEnvelope{}, permanentEventErrorf("multiple JSON values in event payload")
+	var trailing any
+	if err := decoder.Decode(&trailing); err != io.EOF {
+		if err == nil {
+			return eventEnvelope{}, permanentEventErrorf("multiple JSON values in event payload")
+		}
+		return eventEnvelope{}, permanentEventErrorf("invalid trailing JSON: %v", err)
 	}
 	if err := validateEvent(event); err != nil {
 		return eventEnvelope{}, err
