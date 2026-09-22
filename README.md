@@ -107,7 +107,7 @@ What that alert represents:
 - `nats` + JetStream: buffer
 - `hayabusa-ingest`: minimal NATS-to-ClickHouse writer for normalized events
 - `clickhouse`: event storage and query engine
-- `detection`: scheduled SQL rule runner
+- `detection`: typed Go runtime that schedules and executes declarative SQL rules
 - `grafana`: dashboard and alerting
 - `alert-sink`: webhook receiver
 
@@ -279,6 +279,7 @@ By default, management and data-plane ports (API, web UI, Grafana, ClickHouse, N
 
 - [docker-compose.yml](docker-compose.yml)
 - [configs/vector/vector.yaml](configs/vector/vector.yaml)
-- [services/detection/run.sh](services/detection/run.sh)
+- [services/detection/main.go](services/detection/main.go)
 - [configs/grafana/provisioning/alerting/hayabusa-alerting.yaml](configs/grafana/provisioning/alerting/hayabusa-alerting.yaml)
 - [scripts/smoke-test.sh](scripts/smoke-test.sh)
+- [scripts/test-detection-scenarios.sh](scripts/test-detection-scenarios.sh)
