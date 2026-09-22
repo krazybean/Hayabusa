@@ -26,7 +26,7 @@ services:
     container_name: nats
     command: ["-js", "-m", "8222"]
     ports:
-      - "${HAYABUSA_NATS_BIND:-0.0.0.0}:4222:4222"
+      - "${HAYABUSA_NATS_BIND:-127.0.0.1}:4222:4222"
       - "127.0.0.1:8222:8222"
     volumes:
       - nats_data:/data
@@ -61,8 +61,8 @@ services:
     container_name: vector
     ports:
       - "127.0.0.1:8686:8686"
-      - "${HAYABUSA_SYSLOG_BIND:-0.0.0.0}:1514:1514"
-      - "${HAYABUSA_SYSLOG_BIND:-0.0.0.0}:1514:1514/udp"
+      - "${HAYABUSA_SYSLOG_BIND:-127.0.0.1}:1514:1514"
+      - "${HAYABUSA_SYSLOG_BIND:-127.0.0.1}:1514:1514/udp"
       - "${HAYABUSA_LEGACY_WINDOWS_BIND:-127.0.0.1}:24225:24225"
     volumes:
       - ./configs/vector/vector.yaml:/etc/vector/vector.yaml:ro
