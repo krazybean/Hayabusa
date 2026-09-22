@@ -26,17 +26,16 @@ jobs:
           go-version-file: services/hayabusa-ingest/go.mod
           cache-dependency-path: services/hayabusa-ingest/go.sum
 
-      - name: Test ingest service
-        working-directory: services/hayabusa-ingest
+      - name: Test Go services
         run: |
-          go test ./...
-          go vet ./...
+          (cd services/hayabusa-ingest && go test ./... && go vet ./...)
+          (cd services/detection && go test ./... && go vet ./...)
 
       - name: Validate shell syntax
         run: |
           while IFS= read -r -d '' file; do
             bash -n "$file"
-          done < <(find scripts collector services/detection -type f -name '*.sh' -print0)
+          done < <(find scripts collector -type f -name '*.sh' -print0)
 
       - name: Test and validate Node services
         run: |
