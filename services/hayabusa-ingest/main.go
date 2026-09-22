@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"encoding/json"
@@ -19,6 +20,25 @@ import (
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 	"github.com/nats-io/nats.go"
 )
+
+const (
+	supportedSchemaVersion = "hayabusa.event.v1"
+	maxEventBytes          = 1 << 20
+)
+
+type permanentEventError struct { err error }
+
+func (e permanentEventError) Error() string { return e.err.Error() }
+func (e permanentEventError) Unwrap() error { return e.err }
+
+func permanentEventErrorf(format string, args ...any) error {
+	return permanentEventError{err: fmt.Errorf(format, args...)}
+}
+
+func isPermanentEventError(err error) bool {
+	var target permanentEventError
+	return errors.As(err, &target)
+}
 
 type eventEnvelope struct {
 	TS            string         `json:"ts"`
@@ -124,6 +144,13 @@ func main() {
 
 			for _, msg := range msgs {
 				if err := handleMessage(ctx, chConn, msg.Data, cfg.LogInserts); err != nil {
+					if isPermanentEventError(err) {
+						log.Printf("dropping invalid event subject=%s bytes=%d error=%v", msg.Subject, len(msg.Data), err)
+						if termErr := msg.Term(); termErr != nil {
+							log.Printf("nats term failed subject=%s error=%v", msg.Subject, termErr)
+						}
+						continue
+					}
 					log.Printf("insert failed subject=%s bytes=%d error=%v", msg.Subject, len(msg.Data), err)
 					if nakErr := msg.Nak(); nakErr != nil {
 						log.Printf("nats nak failed subject=%s error=%v", msg.Subject, nakErr)
@@ -139,14 +166,14 @@ func main() {
 }
 
 func handleMessage(parent context.Context, conn driver.Conn, data []byte, logInserts bool) error {
-	var event eventEnvelope
-	if err := json.Unmarshal(data, &event); err != nil {
-		return fmt.Errorf("invalid json: %w", err)
+	event, err := decodeAndValidateEvent(data)
+	if err != nil {
+		return err
 	}
 
 	ts, err := parseEventTime(event.TS)
 	if err != nil {
-		return fmt.Errorf("invalid ts %q: %w", event.TS, err)
+		return permanentEventErrorf("invalid ts %q: %v", event.TS, err)
 	}
 
 	fields := stringifyMap(event.Fields)
@@ -169,6 +196,52 @@ func handleMessage(parent context.Context, conn driver.Conn, data []byte, logIns
 
 	if logInserts {
 		log.Printf("inserted event ts=%s ingest_source=%s", event.TS, event.IngestSource)
+	}
+	return nil
+}
+
+
+func decodeAndValidateEvent(data []byte) (eventEnvelope, error) {
+	if len(data) == 0 {
+		return eventEnvelope{}, permanentEventErrorf("empty event payload")
+	}
+	if len(data) > maxEventBytes {
+		return eventEnvelope{}, permanentEventErrorf("event payload exceeds %d bytes", maxEventBytes)
+	}
+
+	var event eventEnvelope
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.UseNumber()
+	if err := decoder.Decode(&event); err != nil {
+		return eventEnvelope{}, permanentEventErrorf("invalid json: %v", err)
+	}
+	if decoder.More() {
+		return eventEnvelope{}, permanentEventErrorf("multiple JSON values in event payload")
+	}
+	if err := validateEvent(event); err != nil {
+		return eventEnvelope{}, err
+	}
+	return event, nil
+}
+
+func validateEvent(event eventEnvelope) error {
+	if strings.TrimSpace(event.TS) == "" {
+		return permanentEventErrorf("missing ts")
+	}
+	if strings.TrimSpace(event.Platform) == "" {
+		return permanentEventErrorf("missing platform")
+	}
+	if strings.TrimSpace(event.SchemaVersion) == "" {
+		return permanentEventErrorf("missing schema_version")
+	}
+	if event.SchemaVersion != supportedSchemaVersion {
+		return permanentEventErrorf("unsupported schema_version %q", event.SchemaVersion)
+	}
+	if strings.TrimSpace(event.IngestSource) == "" {
+		return permanentEventErrorf("missing ingest_source")
+	}
+	if event.Fields == nil {
+		return permanentEventErrorf("missing fields")
 	}
 	return nil
 }
