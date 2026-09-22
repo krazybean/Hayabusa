@@ -14,17 +14,17 @@ Docker Compose binds management and data-plane surfaces to loopback by default:
 - Vector health: 127.0.0.1:8686
 - Alert sink: 127.0.0.1:5678
 
-Collector ingress is separate because remote endpoints may need to reach the host:
+Collector ingress is also loopback-only by default:
 
-- NATS collector ingress: 4222
-- Syslog TCP/UDP: 1514
-- Legacy Windows forward lane: 24225 (loopback by default)
+- NATS collector ingress: 127.0.0.1:4222
+- Syslog TCP/UDP: 127.0.0.1:1514
+- Legacy Windows forward lane: 127.0.0.1:24225
 
-The host bind values for collector ingress are explicit environment settings in `.env.example`.
+Remote collection is an explicit opt-in. Copy `.env.example` to `.env` and set the relevant `HAYABUSA_*_BIND` variable to the specific trusted LAN interface/IP that collectors must reach. Avoid wildcard binds such as `0.0.0.0` unless the network boundary has been deliberately reviewed.
 
 ## Current trust assumptions
 
-- collector ingress is used only on a trusted local/LAN network
+- collector ingress stays on loopback unless the operator explicitly binds it to a trusted local/LAN interface
 - the API has no authentication or RBAC
 - NATS collector ingress has no supported credentials/TLS onboarding path yet
 - ClickHouse and management surfaces are not intended for remote exposure
