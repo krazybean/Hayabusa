@@ -141,6 +141,7 @@ services:
       NATS_URL: nats://nats:4222
       NATS_SUBJECT: security.events
       TEST_EVENT_BURST_COUNT: "5"
+      ENABLE_DEMO_ENDPOINTS: "true"
       CORS_ORIGINS: ${HAYABUSA_CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
     volumes:
       - ./services/api/server.js:/app/server.js:ro
