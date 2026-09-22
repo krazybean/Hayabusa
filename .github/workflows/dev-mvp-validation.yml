@@ -41,6 +41,7 @@ jobs:
         run: |
           node --test services/api/server.test.js
           node --check services/api/server.js
+          for file in services/api/lib/*.js; do node --check "$file"; done
           node --check services/alert-router/server.js
           node --check apps/web/server.js
           node --check apps/web/app.js
