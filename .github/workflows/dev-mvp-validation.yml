@@ -1,15 +1,57 @@
-name: Dev MVP Validation
+name: Hayabusa Validation
 
 on:
   push:
     branches:
       - dev
+      - main
+  pull_request:
+    branches:
+      - main
+      - dev
   workflow_dispatch:
 
 jobs:
+  static-validation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: services/hayabusa-ingest/go.mod
+          cache-dependency-path: services/hayabusa-ingest/go.sum
+
+      - name: Test Go services
+        run: |
+          (cd services/hayabusa-ingest && go test ./... && go vet ./...)
+          (cd services/detection && go test ./... && go vet ./...)
+
+      - name: Validate shell syntax
+        run: |
+          while IFS= read -r -d '' file; do
+            bash -n "$file"
+          done < <(find scripts collector -type f -name '*.sh' -print0)
+
+      - name: Test and validate Node services
+        run: |
+          node --test services/api/server.test.js
+          node --check services/api/server.js
+          node --check services/alert-router/server.js
+          node --check apps/web/server.js
+          node --check apps/web/app.js
+
+      - name: Validate Compose config
+        run: docker compose config
+
   validate-mvp:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    needs: static-validation
 
     steps:
       - name: Check out repository
@@ -20,9 +62,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y netcat-openbsd
 
-      - name: Validate Compose config
-        run: docker compose config
-
       - name: Start strict MVP stack
         run: docker compose up -d --remove-orphans
 
@@ -31,6 +70,12 @@ jobs:
           SMOKE_TIMEOUT_SECONDS: "240"
           SMOKE_ALERT_POLL_ATTEMPTS: "50"
         run: ./scripts/smoke-test.sh
+
+      - name: Validate detection scenarios
+        run: bash ./scripts/test-detection-scenarios.sh
+
+      - name: Validate dependency recovery
+        run: bash ./scripts/test-failure-recovery.sh
 
       - name: Show service status
         if: always()
@@ -42,6 +87,8 @@ jobs:
           docker compose logs --tail=200 clickhouse
           docker compose logs --tail=200 nats
           docker compose logs --tail=200 vector
+          docker compose logs --tail=200 hayabusa-ingest
+          docker compose logs --tail=200 api
           docker compose logs --tail=200 detection
           docker compose logs --tail=200 grafana
           docker compose logs --tail=200 alert-sink

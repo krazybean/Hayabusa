@@ -40,12 +40,14 @@ flowchart LR
 - `grafana`: provides one ClickHouse-backed dashboard and alert rules
 - `alert-sink`: receives Grafana webhook payloads and logs them; optional forwarding stays available through env vars
 
-## Non-Goals
+## Current Boundaries
 
-- no auth
-- no API layer
-- no custom frontend
+- minimal local API and web UI exist, but neither is a production control plane
+- no auth or RBAC
 - no clustering or HA
 - no endpoint fleet management
 - no Windows control plane beyond one real host onboarding path
 - no compliance or investigation workflow
+- management/data surfaces bind to loopback by default; collector ingress is the intentional network-facing boundary
+
+See [INVARIANTS.md](INVARIANTS.md), [TECHNICAL_DEBT.md](TECHNICAL_DEBT.md), and [adr/](adr/) for the rules and tradeoffs behind the current design.

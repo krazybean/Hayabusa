@@ -107,7 +107,7 @@ What that alert represents:
 - `nats` + JetStream: buffer
 - `hayabusa-ingest`: minimal NATS-to-ClickHouse writer for normalized events
 - `clickhouse`: event storage and query engine
-- `detection`: scheduled SQL rule runner
+- `detection`: typed Go runtime that schedules and executes declarative SQL rules
 - `grafana`: dashboard and alerting
 - `alert-sink`: webhook receiver
 
@@ -256,6 +256,13 @@ Expected:
 - [docs/canonical-event-schema.md](docs/canonical-event-schema.md): raw event envelope and auth view explanation
 - [docs/synthetic-auth.md](docs/synthetic-auth.md): synthetic auth scenarios, loader flow, and validation queries
 - [SECURITY.md](SECURITY.md): how to report vulnerabilities responsibly
+- [docs/INVARIANTS.md](docs/INVARIANTS.md): architecture rules that changes must preserve
+- [docs/TECHNICAL_DEBT.md](docs/TECHNICAL_DEBT.md): explicit accepted engineering debt and exit conditions
+- [docs/adr/](docs/adr/): architecture decision records
+
+## Security Boundary
+
+By default, management and data-plane ports (API, web UI, Grafana, ClickHouse, NATS monitoring, Vector health, and alert sink) bind to loopback on the Hayabusa host. Collector ingress remains separately configurable because real endpoints may need to reach the host. The MVP still assumes a trusted local/LAN environment and does not provide API authentication or NATS credentials/TLS yet; do not expose collector ingress directly to untrusted networks.
 
 ## Deferred Scope
 
@@ -272,6 +279,8 @@ Expected:
 
 - [docker-compose.yml](docker-compose.yml)
 - [configs/vector/vector.yaml](configs/vector/vector.yaml)
-- [services/detection/run.sh](services/detection/run.sh)
+- [services/detection/main.go](services/detection/main.go)
 - [configs/grafana/provisioning/alerting/hayabusa-alerting.yaml](configs/grafana/provisioning/alerting/hayabusa-alerting.yaml)
 - [scripts/smoke-test.sh](scripts/smoke-test.sh)
+- [scripts/test-detection-scenarios.sh](scripts/test-detection-scenarios.sh)
+- [scripts/test-failure-recovery.sh](scripts/test-failure-recovery.sh): CI outage/recovery validation for ClickHouse and NATS

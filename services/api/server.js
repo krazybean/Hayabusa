@@ -7,6 +7,13 @@ const natsUrl = process.env.NATS_URL || "nats://localhost:4222";
 const natsSubject = process.env.NATS_SUBJECT || "security.events";
 const defaultLimit = parseLimit(process.env.DEFAULT_LIMIT, 50);
 const testBurstCount = parseLimit(process.env.TEST_EVENT_BURST_COUNT, 5);
+const demoEndpointsEnabled = process.env.ENABLE_DEMO_ENDPOINTS === "true";
+const allowedOrigins = new Set(
+  (process.env.CORS_ORIGINS || "http://localhost:3000,http://127.0.0.1:3000")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean),
+);
 
 function parseLimit(value, fallback = defaultLimit) {
   const parsed = Number(value);
@@ -14,14 +21,19 @@ function parseLimit(value, fallback = defaultLimit) {
   return Math.min(Math.floor(parsed), 200);
 }
 
-function jsonResponse(res, status, payload) {
+function jsonResponse(req, res, status, payload) {
   const body = JSON.stringify(payload);
-  res.writeHead(status, {
+  const origin = req.headers.origin || "";
+  const headers = {
     "content-type": "application/json; charset=utf-8",
-    "access-control-allow-origin": "*",
     "access-control-allow-methods": "GET, POST, OPTIONS",
     "access-control-allow-headers": "content-type",
-  });
+    "vary": "Origin",
+  };
+  if (allowedOrigins.has(origin)) {
+    headers["access-control-allow-origin"] = origin;
+  }
+  res.writeHead(status, headers);
   res.end(body);
 }
 
@@ -198,7 +210,7 @@ ORDER BY ts DESC
 LIMIT ${limit}
 FORMAT JSONEachRow
 `);
-  jsonResponse(res, 200, { alerts: rows });
+  jsonResponse(req, res, 200, { alerts: rows });
 }
 
 async function handleEvents(req, res) {
@@ -221,10 +233,10 @@ ORDER BY ts DESC
 LIMIT ${limit}
 FORMAT JSONEachRow
 `);
-  jsonResponse(res, 200, { events: rows });
+  jsonResponse(req, res, 200, { events: rows });
 }
 
-async function handleHealth(_req, res) {
+async function handleHealth(req, res) {
   const [natsConnected, clickhouseHealth] = await Promise.all([
     checkNats(),
     queryClickHouse(`
@@ -239,14 +251,14 @@ FORMAT JSONEachRow
   ]);
 
   const lastEventTs = clickhouseHealth.row.last_event_ts || "";
-  jsonResponse(res, 200, {
+  jsonResponse(req, res, 200, {
     ok: natsConnected && clickhouseHealth.ok,
     nats_connected: natsConnected,
     clickhouse_connected: clickhouseHealth.ok,
     last_event_ts: lastEventTs,
     ingest_rate: Number(clickhouseHealth.row.ingest_rate || 0),
     collector_status: lastEventTs ? "connected" : "unknown",
-    error: clickhouseHealth.error || "",
+    error: clickhouseHealth.ok ? "" : "clickhouse unavailable",
   });
 }
 
@@ -258,7 +270,7 @@ async function handleGenerateTestEvent(_req, res) {
     await publishNats(natsSubject, event);
   }
 
-  jsonResponse(res, 202, {
+  jsonResponse(_req, res, 202, {
     ok: true,
     subject: natsSubject,
     events_published: events.length,
@@ -270,7 +282,7 @@ async function handleGenerateTestEvent(_req, res) {
 const server = http.createServer(async (req, res) => {
   try {
     if (req.method === "OPTIONS") {
-      return jsonResponse(res, 204, {});
+      return jsonResponse(req, res, 204, {});
     }
 
     const path = new URL(req.url, "http://localhost").pathname;
@@ -283,17 +295,27 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && path === "/events") {
       return await handleEvents(req, res);
     }
-    if (req.method === "POST" && path === "/generate-test-event") {
+    if (demoEndpointsEnabled && req.method === "POST" && path === "/generate-test-event") {
       return await handleGenerateTestEvent(req, res);
     }
 
-    jsonResponse(res, 404, { error: "not found" });
+    jsonResponse(req, res, 404, { error: "not found" });
   } catch (err) {
     console.error(`[api] ${err.message}`);
-    jsonResponse(res, 500, { error: err.message });
+    jsonResponse(req, res, 500, { error: "internal server error" });
   }
 });
 
-server.listen(listenPort, "0.0.0.0", () => {
-  console.log(`[api] listening on :${listenPort}, clickhouse=${clickhouseUrl}, nats=${natsUrl}, subject=${natsSubject}`);
-});
+if (require.main === module) {
+  server.listen(listenPort, "0.0.0.0", () => {
+    console.log(`[api] listening on :${listenPort}, clickhouse=${clickhouseUrl}, nats=${natsUrl}, subject=${natsSubject}`);
+  });
+}
+
+module.exports = {
+  buildSyntheticWindowsFailure,
+  formatEventTimestamp,
+  limitFromUrl,
+  parseLimit,
+  parseNatsEndpoint,
+};

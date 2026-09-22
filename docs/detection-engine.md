@@ -6,7 +6,7 @@ Run a simple SQL rule on a fixed schedule and persist matches.
 
 ## Current behavior
 
-- Service: `detection` (Docker Compose)
+- Service: `detection` (typed Go runtime in Docker Compose)
 - Input: YAML rule files in `configs/rules/mvp/*.yaml`
 - Query target for auth rules: ClickHouse (`security.auth_events`)
 - Output table: `security.alert_candidates`
@@ -89,7 +89,7 @@ query: |
   - `fail_then_success`: same `alert_type + entity_user + entity_src_ip + entity_host + source_kind + window_bucket`
 - `reason` and `evidence_summary` are meant to explain why the detection fired without opening raw logs.
 - `security.alert_candidates` stores operator-facing fields such as `alert_type`, `entity_user`, `entity_src_ip`, `entity_host`, `attempt_count`, `distinct_user_count`, and `distinct_ip_count`.
-- This service is intentionally simple and shell-based. It is not meant to be a full rule engine.
+- The runtime is implemented in Go. SQL remains the detection language and YAML remains rule metadata/configuration; runtime code owns execution semantics, validation, cooldown/deduplication, persistence, and observability.
 
 ## Recent detections query path
 
@@ -185,3 +185,17 @@ Check entity-level duplicates inside the same alert window bucket:
 Expected:
 - duplicate fingerprint and duplicate entity/window sections should be empty
 - rerunning the detector without new data should not increase totals inside the same bucket
+
+
+## Automated rule validation
+
+CI runs `scripts/test-detection-scenarios.sh` after the full stack smoke test.
+
+Current fixture expectations:
+
+- `benign-success` -> no alert candidates
+- `password-spray` -> `security_source_multi_user_burst`
+- `distributed-attack` -> `security_user_multi_source_burst`
+- `fail-then-success` -> `security_failed_then_success`
+
+The detector's pure execution semantics are also unit-tested under `services/detection/main_test.go`.

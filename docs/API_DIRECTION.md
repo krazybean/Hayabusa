@@ -1,55 +1,48 @@
-# API_DIRECTION.md
+# API Direction
 
 ## Status
 
-API layer is not yet implemented.
+A minimal API is implemented at `services/api/server.js`.
 
-This document defines intended direction.
+Current endpoints:
 
----
+- `GET /health`
+- `GET /events`
+- `GET /alerts`
+- `POST /generate-test-event`
+
+The current API is an MVP facade for the local demo. It is **not** yet the stable public control-plane API and it has no authentication/RBAC.
 
 ## Goal
 
-Expose Hayabusa as an API-first system:
+Evolve Hayabusa toward an API-first system interface for:
 
 - events
 - detections
-- alerts
+- findings/alerts
 - system state
-
----
-
-## Planned Domains
-
-/events
-/detections
-/alerts
-/system
-
----
 
 ## Current Mapping
 
 Today:
+
 - ClickHouse = data layer
-- scripts = control layer
-- Grafana = visualization
+- NATS = event transport
+- detection service = rule execution
+- API = minimal read/demo facade
+- web = guided local UI
+- Grafana = visualization and alert evaluation
 
 Future:
-- API replaces direct access patterns
 
----
+- formalize API contracts before remote or multi-user operation
+- put authenticated control-plane operations behind the API
+- reduce direct operator dependence on ClickHouse/Grafana
 
 ## Rules
 
 - API must not bypass pipeline logic
 - API must reflect system state, not invent it
 - API should sit above detection/storage layers
-
----
-
-## Warning
-
-Do NOT prematurely build API abstractions.
-
-System must stabilize first.
+- remote exposure requires an explicit security model
+- demo-only mutation endpoints must stay distinguishable from production control-plane operations

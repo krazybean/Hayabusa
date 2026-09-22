@@ -179,8 +179,8 @@ These are intentionally outside the current demo:
 - Prometheus
 - ClickHouse Keeper
 - auth or user accounts
-- API layer
-- custom frontend
+- authenticated/stable public API contract
+- production-grade frontend/control plane
 - clustering or HA
 - compliance/reporting
 - endpoint fleet management
