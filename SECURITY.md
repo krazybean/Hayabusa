@@ -11,3 +11,7 @@ When reporting:
 - include impact and any suggested mitigation
 
 If no private contact channel is listed yet, open a minimal public issue that only asks for a private security contact and does not include sensitive details.
+
+## Current deployment boundary
+
+The MVP assumes a trusted local host/LAN and is not designed for direct internet exposure. See [docs/SECURITY_BOUNDARIES.md](docs/SECURITY_BOUNDARIES.md) for current port exposure, authentication limitations, and required hardening before remote or multi-user use.
