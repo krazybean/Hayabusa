@@ -32,8 +32,7 @@ via a local docker-compose stack.
 
 ## Active Gaps
 
-- minimal API exists but is not yet a stable/authenticated public contract
-- minimal API remains unauthenticated and intentionally local-only
+- minimal API exists but is intentionally local-only and is not yet a stable/authenticated public contract
 - NATS collector ingress still assumes a trusted network and has no supported credentials/TLS onboarding path
 - orchestration is still implicit (service loops + scripts)
 - no clear collector/plugin extensibility interface yet
