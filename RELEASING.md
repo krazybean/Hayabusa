@@ -1,5 +1,7 @@
 # Releasing Hayabusa
 
+Repository merge policy and required branch rules are documented in [docs/REPOSITORY_GOVERNANCE.md](docs/REPOSITORY_GOVERNANCE.md).
+
 Hayabusa does not currently publish a packaged production release. This document defines the minimum gate for any future tagged release.
 
 ## Required checks
