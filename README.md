@@ -120,9 +120,13 @@ What that alert represents:
 
 ## Try It In 60 Seconds
 
+The local demo requires no network exposure:
+
 ```bash
 docker compose up -d --build
 ```
+
+For a collector on another machine, copy `.env.example` to `.env` and set `HAYABUSA_NATS_BIND` (or `HAYABUSA_SYSLOG_BIND`) to the Hayabusa host's trusted LAN IP before starting the stack. Avoid `0.0.0.0` unless you have deliberately reviewed the network boundary.
 
 Then open:
 
@@ -262,7 +266,7 @@ Expected:
 
 ## Security Boundary
 
-By default, management and data-plane ports (API, web UI, Grafana, ClickHouse, NATS monitoring, Vector health, and alert sink) bind to loopback on the Hayabusa host. Collector ingress remains separately configurable because real endpoints may need to reach the host. The MVP still assumes a trusted local/LAN environment and does not provide API authentication or NATS credentials/TLS yet; do not expose collector ingress directly to untrusted networks.
+By default, management, data-plane, and collector-ingress ports bind to loopback on the Hayabusa host. Remote collectors are an explicit opt-in: set the relevant `HAYABUSA_*_BIND` value in a local `.env` to the specific trusted LAN interface/IP that the collector must reach. The MVP still does not provide API authentication or NATS credentials/TLS; do not bind collector ingress to an untrusted interface or expose it to the internet.
 
 ## Deferred Scope
 

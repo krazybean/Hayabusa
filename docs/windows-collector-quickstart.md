@@ -61,7 +61,29 @@ Expected:
 
 This proves the local pipeline without SMB/RDP or any external client machine.
 
-## 3. Build the Windows Collector Bundle
+## 3. Enable Trusted-LAN Collector Ingress
+
+The local demo keeps NATS on loopback. Before installing a collector on another machine, bind NATS only to the Hayabusa host's trusted LAN IP:
+
+```bash
+cp -n .env.example .env
+```
+
+Edit `.env`:
+
+```text
+HAYABUSA_NATS_BIND=<HAYABUSA_HOST_IP>
+```
+
+Then apply the bind:
+
+```bash
+docker compose up -d nats nats-init hayabusa-ingest api
+```
+
+Do not use `0.0.0.0` or expose port 4222 to the internet. The current MVP does not yet provide NATS credentials/TLS onboarding.
+
+## 4. Build the Windows Collector Bundle
 
 On the Hayabusa host:
 
@@ -77,7 +99,7 @@ dist/hayabusa-windows-collector.zip
 
 Extract it, then open PowerShell as Administrator in the extracted folder.
 
-## 4. Install the Collector
+## 5. Install the Collector
 
 Replace `<HAYABUSA_HOST_IP>` with the IP address of the machine running Docker Compose:
 
@@ -101,7 +123,7 @@ Expected output includes:
 
 The installer does not change global execution policy. It runs collector scripts with `-ExecutionPolicy Bypass` only for the service invocation.
 
-## 5. Validate Locally
+## 6. Validate Locally
 
 ```powershell
 .\status.ps1
@@ -116,7 +138,7 @@ Expected:
 - NATS host/port is reachable
 - recent `4624` / `4625` events are visible or guidance is printed
 
-## 6. Generate a Useful Failed Login
+## 7. Generate a Useful Failed Login
 
 Best signal comes from remote SMB or RDP activity that creates logon type `3` or `10`.
 
@@ -124,7 +146,7 @@ From another machine, attempt a bad login to the Windows host, or use a remote S
 
 Local lock/unlock and service logons often create logon types `5`, `7`, or `11`; Hayabusa drops those by design because they are noisy for this demo.
 
-## 7. Confirm the Event Reached Hayabusa
+## 8. Confirm the Event Reached Hayabusa
 
 On the Windows machine, confirm Vector normalized the event:
 
@@ -145,7 +167,7 @@ curl -s http://localhost:8123/ --data-binary \
   "SELECT ts, user, src_ip, host, status, raw_event_id FROM security.auth_events WHERE source_kind='windows_auth' ORDER BY ts DESC LIMIT 10 FORMAT PrettyCompact"
 ```
 
-## 8. See Alerts
+## 9. See Alerts
 
 Open:
 

@@ -30,7 +30,21 @@ The detailed collector doc lives at:
 
 Expected:
 - `nats` is running
-- host port `4222/tcp` is exposed
+- port `4222/tcp` is loopback-only unless you explicitly configure remote collector ingress
+
+For a Windows host on another machine, create a local `.env` and bind NATS only to the Hayabusa host's trusted LAN IP:
+
+```bash
+cp -n .env.example .env
+```
+
+Set:
+
+```text
+HAYABUSA_NATS_BIND=<HAYABUSA_HOST_IP>
+```
+
+Then re-apply the stack with `docker compose up -d`. Do not expose unauthenticated NATS to the internet.
 
 ## 2. Install and configure the Windows collector
 
