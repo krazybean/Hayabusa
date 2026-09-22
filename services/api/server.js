@@ -7,6 +7,7 @@ const natsUrl = process.env.NATS_URL || "nats://localhost:4222";
 const natsSubject = process.env.NATS_SUBJECT || "security.events";
 const defaultLimit = parseLimit(process.env.DEFAULT_LIMIT, 50);
 const testBurstCount = parseLimit(process.env.TEST_EVENT_BURST_COUNT, 5);
+const demoEndpointsEnabled = process.env.ENABLE_DEMO_ENDPOINTS === "true";
 const allowedOrigins = new Set(
   (process.env.CORS_ORIGINS || "http://localhost:3000,http://127.0.0.1:3000")
     .split(",")
@@ -294,7 +295,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && path === "/events") {
       return await handleEvents(req, res);
     }
-    if (req.method === "POST" && path === "/generate-test-event") {
+    if (demoEndpointsEnabled && req.method === "POST" && path === "/generate-test-event") {
       return await handleGenerateTestEvent(req, res);
     }
 
