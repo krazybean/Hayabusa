@@ -2,7 +2,7 @@
 
 ## Status
 
-A minimal API is implemented at `services/api/server.js`.
+A minimal API is implemented under `services/api/`. `server.js` owns routing while `lib/` contains dependency clients and pure helpers.
 
 Current endpoints:
 
