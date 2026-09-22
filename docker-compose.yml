@@ -144,7 +144,7 @@ services:
       ENABLE_DEMO_ENDPOINTS: "true"
       CORS_ORIGINS: ${HAYABUSA_CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
     volumes:
-      - ./services/api/server.js:/app/server.js:ro
+      - ./services/api:/app:ro
     depends_on:
       clickhouse:
         condition: service_healthy
