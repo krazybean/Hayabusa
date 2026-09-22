@@ -32,21 +32,20 @@ via a local docker-compose stack.
 
 ## Active Gaps
 
-- minimal API exists but is not yet a stable/authenticated public contract
-- detection runtime remains shell-heavy and lacks isolated rule fixture coverage
-- orchestration is implicit (scripts + cron style)
-- logic spread across configs + services
-- no clear extensibility interface yet
+- minimal API exists but is intentionally local-only and is not yet a stable/authenticated public contract
+- NATS collector ingress still assumes a trusted network and has no supported credentials/TLS onboarding path
+- orchestration is still implicit (service loops + scripts)
+- no clear collector/plugin extensibility interface yet
 
 ---
 
 ## Immediate Priorities
 
-1. complete the anti-vibe hardening pass
-2. move detection runtime responsibilities out of shell while preserving SQL rules
-3. add isolated detection fixtures and failure-mode tests
-4. formalize authenticated API/security boundaries before remote use
-5. keep architecture/status documentation synchronized
+1. keep the hardening baseline green in CI
+2. formalize authenticated API/security boundaries before any remote or multi-user use
+3. add supported NATS credentials/TLS onboarding for collector ingress
+4. keep architecture/status documentation synchronized
+5. defer HA, multi-tenancy, and fleet management until product requirements justify them
 
 ---
 
@@ -64,7 +63,7 @@ via a local docker-compose stack.
 
 - formalized API-first system interface (building on the existing MVP facade)
 - orchestration layer (Temporal-style)
-- detection packaging + testing
+- detection packaging + broader rule fixture coverage
 - pluggable collectors and pipelines
 
 ---
@@ -73,5 +72,9 @@ via a local docker-compose stack.
 
 - MVP validated end-to-end
 - Windows + synthetic auth pipeline working
-- detection loop operational
+- typed Go detection runtime operational
+- positive/negative detection scenarios validated in CI
+- ClickHouse/NATS outage and recovery exercised in CI
+- management surfaces hardened to loopback by default
+- engineering invariants, ADRs, release gates, and technical-debt register documented
 - demo flow stable
