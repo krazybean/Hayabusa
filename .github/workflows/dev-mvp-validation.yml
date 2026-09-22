@@ -71,6 +71,9 @@ jobs:
           SMOKE_ALERT_POLL_ATTEMPTS: "50"
         run: ./scripts/smoke-test.sh
 
+      - name: Validate detection scenarios
+        run: bash ./scripts/test-detection-scenarios.sh
+
       - name: Show service status
         if: always()
         run: docker compose ps --all
