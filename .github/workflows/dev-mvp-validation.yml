@@ -74,6 +74,9 @@ jobs:
       - name: Validate detection scenarios
         run: bash ./scripts/test-detection-scenarios.sh
 
+      - name: Validate dependency recovery
+        run: bash ./scripts/test-failure-recovery.sh
+
       - name: Show service status
         if: always()
         run: docker compose ps --all
