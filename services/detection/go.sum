@@ -1,0 +1,4 @@
+gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405 h1:h3HZ9hMhUfZv7qsRcNQYGPfwqfsbDnKOrsM6Wv5jIK0=
+gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VWGB0M=
+gopkg.in/yaml.v3 v3.0.1 h1:fxVmHYckBVPw+vNT8JYxGwNWBxRb2r6K2V7fY5KynYk=
+gopkg.in/yaml.v3 v3.0.1/go.mod h1:K4uyk7z7BCEPqu6E+C64YfvVfpum2gZsI4Yt4Z7pD2A=
