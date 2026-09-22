@@ -305,6 +305,16 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(listenPort, "0.0.0.0", () => {
-  console.log(`[api] listening on :${listenPort}, clickhouse=${clickhouseUrl}, nats=${natsUrl}, subject=${natsSubject}`);
-});
+if (require.main === module) {
+  server.listen(listenPort, "0.0.0.0", () => {
+    console.log(`[api] listening on :${listenPort}, clickhouse=${clickhouseUrl}, nats=${natsUrl}, subject=${natsSubject}`);
+  });
+}
+
+module.exports = {
+  buildSyntheticWindowsFailure,
+  formatEventTimestamp,
+  limitFromUrl,
+  parseLimit,
+  parseNatsEndpoint,
+};
