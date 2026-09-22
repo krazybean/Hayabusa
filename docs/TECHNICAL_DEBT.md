@@ -5,7 +5,7 @@ This file tracks accepted engineering debt that is intentionally not hidden behi
 | Item | Risk | Current mitigation | Exit condition |
 | --- | --- | --- | --- |
 | API has no authentication | The API is intentionally local-only and must not become a remote or multi-user control plane without authentication/authorization. | Explicit module boundaries, loopback host binding by default, bounded CORS, bounded error responses, and unit/integration validation. | Introduce an explicit authenticated API boundary before remote/multi-user operation. |
-| NATS collector ingress is unauthenticated in MVP | LAN-exposed NATS can accept untrusted publishers if used outside a trusted network. | Documented trust boundary and explicit bind configuration. | Add supported NATS credentials/TLS onboarding for non-local deployments. |
+| NATS collector ingress is unauthenticated in MVP | Remote collectors require an explicit trusted-LAN bind, but any such bind still accepts unauthenticated publishers. | Loopback by default, documented trust boundary, and explicit per-interface bind configuration. | Add supported NATS credentials/TLS onboarding for non-local deployments. |
 | No HA/clustering | Single-host failure stops detection. | Scope is explicitly local-first MVP. | Address only if product requirements move beyond single-host/self-hosted use. |
 
 Debt is removed from this file when the exit condition is met. New debt that changes correctness, security, or architectural boundaries must be recorded here rather than left implicit.
