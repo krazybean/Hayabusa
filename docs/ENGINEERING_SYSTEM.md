@@ -57,13 +57,14 @@ No cross-layer logic.
 
 ### 3. Detection Rules
 
-- SQL-driven
-- config-based
-- no embedded service logic
+- SQL-driven detection semantics
+- YAML metadata/configuration
+- typed Go execution runtime
+- no individual detection logic embedded in service code
+- positive/negative synthetic scenario validation in CI
 
 Future:
-- metadata
-- test harness
+- richer fixture packaging
 - orchestration
 
 ---
@@ -122,7 +123,7 @@ Avoid:
 
 - embedding detection logic in services
 - coupling UI to detection logic
-- hiding logic in scripts
+- hiding application-runtime logic in scripts
 - breaking demo flow
 
 ---
