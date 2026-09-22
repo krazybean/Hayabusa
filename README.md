@@ -283,3 +283,4 @@ By default, management and data-plane ports (API, web UI, Grafana, ClickHouse, N
 - [configs/grafana/provisioning/alerting/hayabusa-alerting.yaml](configs/grafana/provisioning/alerting/hayabusa-alerting.yaml)
 - [scripts/smoke-test.sh](scripts/smoke-test.sh)
 - [scripts/test-detection-scenarios.sh](scripts/test-detection-scenarios.sh)
+- [scripts/test-failure-recovery.sh](scripts/test-failure-recovery.sh): CI outage/recovery validation for ClickHouse and NATS
