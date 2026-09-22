@@ -3,8 +3,8 @@ services:
     image: clickhouse/clickhouse-server:26.2.5.45@sha256:8f18d3c681eb07d5f28ac3fd6e1cc4789cb1cb4f9823d52ba8026df49960184b
     container_name: clickhouse
     ports:
-      - "8123:8123"
-      - "9000:9000"
+      - "127.0.0.1:8123:8123"
+      - "127.0.0.1:9000:9000"
     volumes:
       - clickhouse_data:/var/lib/clickhouse
       - ./configs/clickhouse/config.xml:/etc/clickhouse-server/config.d/local-config.xml:ro
@@ -26,8 +26,8 @@ services:
     container_name: nats
     command: ["-js", "-m", "8222"]
     ports:
-      - "4222:4222"
-      - "8222:8222"
+      - "${HAYABUSA_NATS_BIND:-0.0.0.0}:4222:4222"
+      - "127.0.0.1:8222:8222"
     volumes:
       - nats_data:/data
     healthcheck:
@@ -60,10 +60,10 @@ services:
     image: timberio/vector:0.54.0-alpine@sha256:bbc59e9d5a6cf432f11d912911a6ac63784527d978626cff783152c2bb2ee1a9
     container_name: vector
     ports:
-      - "8686:8686"
-      - "1514:1514"
-      - "1514:1514/udp"
-      - "24225:24225"
+      - "127.0.0.1:8686:8686"
+      - "${HAYABUSA_SYSLOG_BIND:-0.0.0.0}:1514:1514"
+      - "${HAYABUSA_SYSLOG_BIND:-0.0.0.0}:1514:1514/udp"
+      - "${HAYABUSA_LEGACY_WINDOWS_BIND:-127.0.0.1}:24225:24225"
     volumes:
       - ./configs/vector/vector.yaml:/etc/vector/vector.yaml:ro
       - ./data/synthetic-auth:/var/lib/hayabusa/synthetic-auth
@@ -108,7 +108,7 @@ services:
     image: grafana/grafana-oss:12.4.2@sha256:83749231c3835e390a3144e5e940203e42b9589761f20ef3169c716e734ad505
     container_name: grafana
     ports:
-      - "3001:3000"
+      - "127.0.0.1:3001:3000"
     environment:
       GF_PLUGINS_PREINSTALL: grafana-clickhouse-datasource@4.14.0
     volumes:
@@ -134,13 +134,14 @@ services:
     container_name: hayabusa-api
     command: ["node", "/app/server.js"]
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     environment:
       API_PORT: "8080"
       CLICKHOUSE_URL: http://clickhouse:8123
       NATS_URL: nats://nats:4222
       NATS_SUBJECT: security.events
       TEST_EVENT_BURST_COUNT: "5"
+      CORS_ORIGINS: ${HAYABUSA_CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
     volumes:
       - ./services/api/server.js:/app/server.js:ro
     depends_on:
@@ -162,7 +163,7 @@ services:
     container_name: hayabusa-web
     command: ["node", "/app/server.js"]
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     environment:
       WEB_PORT: "3000"
     volumes:
@@ -213,7 +214,7 @@ services:
     container_name: alert-sink
     command: ["node", "/app/server.js"]
     ports:
-      - "5678:8080"
+      - "127.0.0.1:5678:8080"
     environment:
       ALERT_ROUTER_LISTEN_PORT: "8080"
       ALERT_ROUTER_EXTERNAL_WEBHOOK_URL: ${HAYABUSA_EXTERNAL_WEBHOOK_URL:-}
