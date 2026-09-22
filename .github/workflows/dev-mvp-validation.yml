@@ -38,8 +38,9 @@ jobs:
             bash -n "$file"
           done < <(find scripts collector services/detection -type f -name '*.sh' -print0)
 
-      - name: Validate Node syntax
+      - name: Test and validate Node services
         run: |
+          node --test services/api/server.test.js
           node --check services/api/server.js
           node --check services/alert-router/server.js
           node --check apps/web/server.js
