@@ -509,8 +509,7 @@ func appendFormat(sql, format string) string {
 }
 
 func firstNonEmptyLine(value string) string {
-	for _, line := range strings.Split(value, "
-") {
+	for _, line := range strings.Split(value, "\n") {
 		if strings.TrimSpace(line) != "" { return strings.TrimSuffix(line, "") }
 	}
 	return ""
@@ -529,8 +528,7 @@ func utcNowString() string {
 }
 
 func writeHeartbeat(path string) {
-	if err := os.WriteFile(path, []byte(time.Now().UTC().Format(time.RFC3339)+"
-"), 0o644); err != nil {
+	if err := os.WriteFile(path, []byte(time.Now().UTC().Format(time.RFC3339)+"\n"), 0o644); err != nil {
 		log.Printf("heartbeat write failed: %v", err)
 	}
 }
