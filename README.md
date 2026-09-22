@@ -256,6 +256,13 @@ Expected:
 - [docs/canonical-event-schema.md](docs/canonical-event-schema.md): raw event envelope and auth view explanation
 - [docs/synthetic-auth.md](docs/synthetic-auth.md): synthetic auth scenarios, loader flow, and validation queries
 - [SECURITY.md](SECURITY.md): how to report vulnerabilities responsibly
+- [docs/INVARIANTS.md](docs/INVARIANTS.md): architecture rules that changes must preserve
+- [docs/TECHNICAL_DEBT.md](docs/TECHNICAL_DEBT.md): explicit accepted engineering debt and exit conditions
+- [docs/adr/](docs/adr/): architecture decision records
+
+## Security Boundary
+
+By default, management and data-plane ports (API, web UI, Grafana, ClickHouse, NATS monitoring, Vector health, and alert sink) bind to loopback on the Hayabusa host. Collector ingress remains separately configurable because real endpoints may need to reach the host. The MVP still assumes a trusted local/LAN environment and does not provide API authentication or NATS credentials/TLS yet; do not expose collector ingress directly to untrusted networks.
 
 ## Deferred Scope
 
