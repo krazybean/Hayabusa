@@ -32,8 +32,8 @@ via a local docker-compose stack.
 
 ## Active Gaps
 
-- no formal API layer
-- detection system lacks metadata/test harness
+- minimal API exists but is not yet a stable/authenticated public contract
+- detection runtime remains shell-heavy and lacks isolated rule fixture coverage
 - orchestration is implicit (scripts + cron style)
 - logic spread across configs + services
 - no clear extensibility interface yet
@@ -42,11 +42,11 @@ via a local docker-compose stack.
 
 ## Immediate Priorities
 
-1. formalize engineering system (AGENTS.md, ENGINEERING_SYSTEM.md)
-2. stabilize detection structure
-3. improve observability consistency
-4. prepare for API introduction
-5. reduce implicit logic spread
+1. complete the anti-vibe hardening pass
+2. move detection runtime responsibilities out of shell while preserving SQL rules
+3. add isolated detection fixtures and failure-mode tests
+4. formalize authenticated API/security boundaries before remote use
+5. keep architecture/status documentation synchronized
 
 ---
 
@@ -62,7 +62,7 @@ via a local docker-compose stack.
 
 ## Future Direction
 
-- API-first system interface
+- formalized API-first system interface (building on the existing MVP facade)
 - orchestration layer (Temporal-style)
 - detection packaging + testing
 - pluggable collectors and pipelines
