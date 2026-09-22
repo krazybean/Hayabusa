@@ -4,7 +4,7 @@ This file tracks accepted engineering debt that is intentionally not hidden behi
 
 | Item | Risk | Current mitigation | Exit condition |
 | --- | --- | --- | --- |
-| API is intentionally minimal | Single-process built-in Node HTTP server has limited structure and no authentication. | Loopback host binding by default, bounded CORS, no raw dependency errors to clients, unit tests for helper contracts. | Introduce an explicit authenticated API boundary before remote/multi-user operation. |
+| API has no authentication | The API is intentionally local-only and must not become a remote or multi-user control plane without authentication/authorization. | Explicit module boundaries, loopback host binding by default, bounded CORS, bounded error responses, and unit/integration validation. | Introduce an explicit authenticated API boundary before remote/multi-user operation. |
 | NATS collector ingress is unauthenticated in MVP | LAN-exposed NATS can accept untrusted publishers if used outside a trusted network. | Documented trust boundary and explicit bind configuration. | Add supported NATS credentials/TLS onboarding for non-local deployments. |
 | No HA/clustering | Single-host failure stops detection. | Scope is explicitly local-first MVP. | Address only if product requirements move beyond single-host/self-hosted use. |
 
@@ -18,3 +18,5 @@ Debt is removed from this file when the exit condition is met. New debt that cha
 - Positive and negative synthetic scenarios validate the shipped SQL rules in CI.
 
 - Dependency failure/recovery is now exercised in CI for ClickHouse and NATS, including post-recovery event flow.
+
+- API routing, dependency clients, and demo-event generation were separated into explicit modules without adding framework dependencies.
